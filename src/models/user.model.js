@@ -42,7 +42,7 @@ const applicationSchema = new mongoose.Schema({
 // User Schema
 const userSchema = new mongoose.Schema(
   {
-    firstName: { type: String, required: true },
+    firstName: { type: String },
     lastName: { type: String },
     email: { type: String, required: true, unique: true, lowercase: true },
     username: { type: String, required: true, unique: true },

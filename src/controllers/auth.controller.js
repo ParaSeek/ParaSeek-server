@@ -19,9 +19,9 @@ const generateAccessAndRefereshTokens = async (userId) => {
 };
 
 const register = asyncHandler(async (req, res) => {
-  const { username, email, password, firstName, lastName,role } = req.body;
+  const { username, email, password,role } = req.body;
 
-  if (!email || !password || !username || !firstName || !lastName || !role) {
+  if (!email || !password || !username  || !role) {
     throw new ApiError(400, "All filed are requried");
   }
 
@@ -37,8 +37,6 @@ const register = asyncHandler(async (req, res) => {
     username,
     email,
     password,
-    firstName,
-    lastName,
     role
   });
 
