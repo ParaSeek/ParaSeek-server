@@ -19,9 +19,9 @@ const generateAccessAndRefereshTokens = async (userId) => {
 };
 
 const register = asyncHandler(async (req, res) => {
-  const { username, email, password,role } = req.body;
+  const { username, email, password, role } = req.body;
 
-  if (!email || !password || !username  || !role) {
+  if (!email || !password || !username || !role) {
     throw new ApiError(400, "All filed are requried");
   }
 
@@ -37,7 +37,7 @@ const register = asyncHandler(async (req, res) => {
     username,
     email,
     password,
-    role
+    role,
   });
 
   if (!user) {
@@ -55,7 +55,7 @@ const register = asyncHandler(async (req, res) => {
   );
 
   const options = {
-    httpOnly: true,
+    httpOnly: false,
     secure: false,
   };
 
@@ -72,7 +72,6 @@ const login = asyncHandler(async (req, res) => {
   if (!username && !email) {
     throw new ApiError(400, "username or email is required");
   }
-
 
   const user = await User.findOne({
     $or: [{ username }, { email }],
@@ -95,7 +94,7 @@ const login = asyncHandler(async (req, res) => {
   const loggedInUser = await User.findById(user._id);
 
   const options = {
-    httpOnly: true,
+    httpOnly: false,
     secure: false,
   };
 
@@ -108,7 +107,7 @@ const login = asyncHandler(async (req, res) => {
 
 const logout = asyncHandler(async (req, res) => {
   const options = {
-    httpOnly: true,
+    httpOnly: false,
     secure: false,
   };
 
@@ -124,7 +123,7 @@ const socialAuth = asyncHandler(async (req, res) => {
   const user = await userModel.findOne({ email });
 
   const options = {
-    httpOnly: true,
+    httpOnly: false,
     secure: false,
   };
 
@@ -150,4 +149,9 @@ const socialAuth = asyncHandler(async (req, res) => {
   }
 });
 
-export { register, login, logout, socialAuth };
+const getData = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(new ApiResponse(200, req.user, "fetched Successfully"));
+});
+export { register, login, logout, socialAuth, getData };
