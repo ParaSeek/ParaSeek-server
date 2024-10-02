@@ -2,12 +2,13 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
+import { v2 as cloudinary } from "cloudinary";
 
 const updateProfile = asyncHandler(async (req, res) => {
-  // console.log(req);
   const {
     firstName,
     lastName,
+    phoneNumber,
     email,
     dob,
     gender,
@@ -16,22 +17,15 @@ const updateProfile = asyncHandler(async (req, res) => {
     state,
     postalCode,
     country,
-    experience,
-    industries,
-    jobRoles,
-    preferredLocation,
   } = req.body;
-//   console.log("Kunksjfkj");
+
   if (
     !firstName &&
     !lastName &&
+    !phoneNumber &&
     !email &&
     !dob &&
     !gender &&
-    !experience &&
-    !industries &&
-    !jobRoles &&
-    !preferredLocation &&
     !street &&
     !city &&
     !state &&
@@ -56,29 +50,111 @@ const updateProfile = asyncHandler(async (req, res) => {
   if (dobDate > Date.now()) {
     throw new ApiError(400, "Date of birth cannot be in the future.");
   }
-//   console.log(req);
   user.firstName = firstName || user.firstName;
   user.lastName = lastName || user.lastName;
+  user.phoneNumber = phoneNumber || user.phoneNumber;
   user.email = email || user.email;
   user.dob = dobDate || user.dob;
   user.gender = gender || user.gender;
-  user.experience = experience || user.experience;
-  user.jobPreferences.industries = industries || user.jobPreferences.industries;
-  user.jobPreferences.jobRoles = jobRoles || user.jobPreferences.jobRoles;
-  user.jobPreferences.preferredLocation =
-    preferredLocation || user.jobPreferences.preferredLocation;
   user.addresses.street = street || user.addresses.street;
   user.addresses.city = city || user.addresses.city;
   user.addresses.state = state || user.addresses.state;
   user.addresses.postalCode = postalCode || user.addresses.postalCode;
   user.addresses.country = country || user.addresses.country;
-  user.experience = experience || user.experience;
 
   user = await user.save();
-//   console.log("Kunal KUmar");
+  const updatedUser = await User.findById(user._id).select(
+    "-password -jobsPosted"
+  );
   return res
     .status(200)
-    .json(new ApiResponse(200, user, "User update profile Successfully"));
+    .json(
+      new ApiResponse(200, updatedUser, "User update profile Successfully")
+    );
 });
 
-export { updateProfile };
+const updateAvatar = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new ApiError(400, "User not exists");
+  }
+  let avatarLocalPath = req.file?.avatar;
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "Avatar path not exist");
+  }
+  if (avatarLocalPath) {
+    if (user.profileImg) {
+      await cloudinary.uploader.destroy(
+        user.avatar.split("/").pop().split(".")[0]
+      );
+    }
+    const uploadedResponse = await uploadOnCloudinary(avatarLocalPath);
+    user.avatar = uploadedResponse;
+  }
+  user = await user.save();
+
+  return res
+    .state(200)
+    .json(new ApiResponse(200, {}, "avatar set Successfully"));
+});
+
+const updateResume = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new ApiError(400, "User not exists");
+  }
+  let resumeLocalPath = req.file?.resume;
+  if (!resumeLocalPath) {
+    throw new ApiError(400, "Avatar path not exist");
+  }
+  if (resumeLocalPath) {
+    if (user.profileImg) {
+      await cloudinary.uploader.destroy(
+        user.resume.split("/").pop().split(".")[0]
+      );
+    }
+    const uploadedResponse = await uploadOnCloudinary(resumeLocalPath);
+    user.resume = uploadedResponse;
+  }
+  user = await user.save();
+
+  return res
+    .state(200)
+    .json(new ApiResponse(200, {}, "resume set Successfully"));
+});
+
+const updatePassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  if (!oldPassword || !newPassword) {
+    throw new ApiError(400, "Please enter old and new password");
+  }
+
+  const user = await User.findById(req.user?._id).select("+password");
+
+  if (user?.password === undefined) {
+    throw new ApiError(400, "Invaild user");
+  }
+
+  const isPasswordMatch = await user?.isPasswordCorrect(oldPassword);
+
+  if (!isPasswordMatch) {
+    throw new ApiError(400, "Invalid old password");
+  }
+
+  user.password = newPassword;
+
+  await user.save();
+
+  res
+    .status(201)
+    .json(new ApiResponse(201, {}, "password update Successfully"));
+});
+
+export { updateProfile, updateAvatar, updateResume,updatePassword };

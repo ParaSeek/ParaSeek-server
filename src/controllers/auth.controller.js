@@ -2,6 +2,8 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import jwt from "jsonwebtoken";
+import sendMail from "../services/sendMail.js";
 
 const generateAccessAndRefereshTokens = async (userId) => {
   try {
@@ -21,49 +23,142 @@ const generateAccessAndRefereshTokens = async (userId) => {
 const register = asyncHandler(async (req, res) => {
   const { username, email, password, role } = req.body;
 
+  // Check filed are exist or not
   if (!email || !password || !username || !role) {
     throw new ApiError(400, "All filed are requried");
   }
 
-  const existedUser = await User.findOne({
-    $or: [{ username }, { email }],
-  });
-
-  if (existedUser) {
-    throw new ApiError(400, "User already exist");
-  }
-
-  const user = await User.create({
+  // Check username exist or not
+  const existingVerifiedUserByUsername = await User.findOne({
     username,
-    email,
-    password,
-    role,
+    isVerified: true,
   });
 
-  if (!user) {
-    throw new ApiError(500, "Something went wrong");
+  // if exist the send error
+  if (existingVerifiedUserByUsername) {
+    throw new ApiError(400, "Username already taken");
   }
 
-  const createdUser = await User.findById(user._id);
+  // Check email exist or not
+  const existingUserByEmail = await User.findOne({ email });
+  const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-  if (!createdUser) {
-    throw new ApiError(500, "Something went worng");
+  // if exist or not exist
+  if (existingUserByEmail) {
+    // exist or verified
+    if (existingUserByEmail.isVerified) {
+      throw new ApiError(400, "User already exists with this email");
+      return;
+    } else {
+      // email exist but not verified
+      existingUserByEmail.password = password;
+      existingUserByEmail.verifyCode = verifyCode;
+      existingUserByEmail.verifyCodeExpiry = new Date(Date.now() + 3600000);
+      await existingUserByEmail.save({ validateBeforeSave: false });
+    }
+  } else {
+    // email not exist create new user
+    const expiryDate = new Date();
+    expiryDate.setHours(expiryDate.getHours() + 1);
+
+    const newUser = new User({
+      username,
+      email,
+      password,
+      verifyCode,
+      verifyCodeExpiry: expiryDate,
+      isVerified: false,
+    });
+
+    await newUser.save();
   }
-
-  const { refreshToken, accessToken } = generateAccessAndRefereshTokens(
-    createdUser._id
-  );
-
-  const options = {
-    httpOnly: false,
-    secure: false,
-  };
+  console.log("Helllooo");
+  // Sending the mail
+  const data = { user: { name: username }, activationCode: verifyCode };
+  await sendMail({
+    email,
+    subject: "Activate your account",
+    template: "activation-mail.ejs",
+    data,
+  });
+  console.log("Helllooo222222");
+  const user = await User.findOne({ email });
+  const userId = user._id;
+  const token = jwt.sign({ userId }, process.env.ACTIVATION_TOKEN_SECRET, {
+    expiresIn: "1h",
+  });
 
   return res
     .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json(new ApiResponse(200, createdUser, "User Registered Successfully"));
+    .cookie("activation_token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "strict",
+      maxAge: 60 * 60 * 1000,
+    })
+    .json(new ApiResponse(200, {}, "Verification code send Successfully"));
+});
+
+export const activateUser = asyncHandler(async (req, res) => {
+  const { activation_code } = req.body;
+
+  // Ensure activation code is provided
+  if (!activation_code) {
+    throw new ApiError(400, "Please provide the activation code");
+  }
+
+  // Get token from either cookies or authorization header
+  const token =
+    req.cookies?.activation_token ||
+    req.header("Authorization")?.replace("Bearer ", "");
+
+  console.log(activation_code, token);
+  // Ensure token is provided
+  if (!token) {
+    throw new ApiError(400, "Please provide the activation token");
+  }
+
+  // Verify the JWT token and extract the user ID
+  let decodedToken;
+  try {
+    decodedToken = jwt.verify(token, process.env.ACTIVATION_TOKEN_SECRET);
+  } catch (error) {
+    throw new ApiError(400, "Invalid or expired token");
+  }
+
+  // Find user by extracted userId from token
+  const user = await User.findById(decodedToken.userId);
+
+  // Ensure user exists
+  if (!user) {
+    throw new ApiError(404, "User does not exist");
+  }
+
+  // Check if the provided activation code matches the one in the database
+  if (user.verifyCode !== activation_code) {
+    throw new ApiError(400, "Invalid activation code");
+  }
+
+  // Check if the activation code is expired
+  if (user.verifyCodeExpiry && user.verifyCodeExpiry < Date.now()) {
+    throw new ApiError(400, "Activation code has expired");
+  }
+
+  // Mark user as verified and clear verification-related fields
+  await User.findByIdAndUpdate(
+    decodedToken.userId,
+    {
+      isVerified: true,
+      verifyCode: "",
+      verifyCodeExpiry: null,
+    },
+    { new: true } // Returns the updated user
+  );
+
+  // Send success response
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "User verified successfully"));
 });
 
 const login = asyncHandler(async (req, res) => {
@@ -79,6 +174,10 @@ const login = asyncHandler(async (req, res) => {
 
   if (!user) {
     throw new ApiError(404, "User does not exist");
+  }
+
+  if (!user.isVerified) {
+    throw new ApiError(404, "Verify the user first");
   }
 
   const isPasswordValid = await user.isPasswordCorrect(password);
@@ -97,12 +196,16 @@ const login = asyncHandler(async (req, res) => {
     httpOnly: false,
     secure: false,
   };
-
+  let data = {
+    _id: loggedInUser._id,
+    username: loggedInUser.username,
+    email: loggedInUser.email,
+  };
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
-    .json(new ApiResponse(200, loggedInUser, "User logged In Successfully"));
+    .json(new ApiResponse(200, data, "User logged In Successfully"));
 });
 
 const logout = asyncHandler(async (req, res) => {
@@ -150,8 +253,42 @@ const socialAuth = asyncHandler(async (req, res) => {
 });
 
 const getData = asyncHandler(async (req, res) => {
+  const user = req.user;
+  let data;
+  if (user.role == "job_seeker") {
+    data = {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      username: user.username,
+      dob: user.dob,
+      gender: user.gender,
+      role: user.role,
+      addresses: user.addresses,
+      avatar: user.avatar,
+      jobPreferences: user.jobPreferences,
+      application: user.application,
+      resume: user.resume,
+    };
+  } else {
+    data = {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      username: user.username,
+      dob: user.dob,
+      gender: user.gender,
+      role: user.role,
+      addresses: user.addresses,
+      avatar: user.avatar,
+      jobsPosted: user.jobsPosted,
+    };
+  }
   return res
     .status(200)
-    .json(new ApiResponse(200, req.user, "fetched Successfully"));
+    .json(new ApiResponse(200, data, "fetched Successfully"));
 });
+
 export { register, login, logout, socialAuth, getData };
