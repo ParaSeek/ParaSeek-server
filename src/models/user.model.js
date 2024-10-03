@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema(
     lastName: { type: String },
     phoneNumber: { type: Number },
     email: { type: String, required: true, unique: true, lowercase: true },
-    username: { type: String, required: true, unique: true },
+    username: { type: String, required: true, unique: true,lowercase:true },
     password: { type: String },
     dob: {
       type: Date,
@@ -30,11 +30,11 @@ const userSchema = new mongoose.Schema(
     },
     verifyCode: {
       type: String,
-      required: [true, "Verify Code is required"],
+      default:"",
     },
     verifyCodeExpiry: {
       type: Date,
-      required: [true, "Verify Code Expiry is required"],
+      default:null,
     },
     location: {
       street: { type: String },

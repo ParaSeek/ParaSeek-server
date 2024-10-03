@@ -5,6 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 import sendMail from "../services/sendMail.js";
 
+// For generate the token 
 const generateAccessAndRefereshTokens = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -20,6 +21,7 @@ const generateAccessAndRefereshTokens = async (userId) => {
   }
 };
 
+// Registing the user 
 const register = asyncHandler(async (req, res) => {
   const { username, email, password, role } = req.body;
 
@@ -99,6 +101,8 @@ const register = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Verification code send Successfully"));
 });
 
+
+// Activate the user here
 export const activateUser = asyncHandler(async (req, res) => {
   const { activation_code } = req.body;
 
@@ -161,16 +165,16 @@ export const activateUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User verified successfully"));
 });
 
+
+// Login the user here
 const login = asyncHandler(async (req, res) => {
-  const { email, username, password } = req.body;
-
-  if (!username && !email) {
-    throw new ApiError(400, "username or email is required");
+  const { username, password } = req.body;
+  
+  if (!username && !password) {
+    throw new ApiError(400, "Email or password is required");
   }
-
-  const user = await User.findOne({
-    $or: [{ username }, { email }],
-  });
+  
+  const user = await User.findOne({username});
 
   if (!user) {
     throw new ApiError(404, "User does not exist");
@@ -208,6 +212,7 @@ const login = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, data, "User logged In Successfully"));
 });
 
+// Logout the user
 const logout = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: false,
@@ -221,6 +226,8 @@ const logout = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged Out"));
 });
 
+
+// Social Auth for user
 const socialAuth = asyncHandler(async (req, res) => {
   const { email, name } = req.body;
   const user = await userModel.findOne({ email });
@@ -252,43 +259,5 @@ const socialAuth = asyncHandler(async (req, res) => {
   }
 });
 
-const getData = asyncHandler(async (req, res) => {
-  const user = req.user;
-  let data;
-  if (user.role == "job_seeker") {
-    data = {
-      _id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      username: user.username,
-      dob: user.dob,
-      gender: user.gender,
-      role: user.role,
-      addresses: user.addresses,
-      avatar: user.avatar,
-      jobPreferences: user.jobPreferences,
-      application: user.application,
-      resume: user.resume,
-    };
-  } else {
-    data = {
-      _id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      username: user.username,
-      dob: user.dob,
-      gender: user.gender,
-      role: user.role,
-      addresses: user.addresses,
-      avatar: user.avatar,
-      jobsPosted: user.jobsPosted,
-    };
-  }
-  return res
-    .status(200)
-    .json(new ApiResponse(200, data, "fetched Successfully"));
-});
 
-export { register, login, logout, socialAuth, getData };
+export { register, login, logout, socialAuth };
