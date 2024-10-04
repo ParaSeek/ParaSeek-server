@@ -43,7 +43,7 @@ const userSchema = new mongoose.Schema(
       postalCode: { type: String },
       country: { type: String },
     },
-    avatar: { type: String },
+    profilePic: { type: String },
     jobPreferences: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Preferences",

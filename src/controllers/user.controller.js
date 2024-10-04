@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { v2 as cloudinary } from "cloudinary";
-
+import { uploadOnCloudinary } from "../services/cloudinary.js";
 // updating the profile
 const updateProfile = asyncHandler(async (req, res) => {
   const {
@@ -86,60 +86,109 @@ const updateProfile = asyncHandler(async (req, res) => {
     );
 });
 
-const updateAvatar = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
+// updating the avatar here
+const updateUserAvatar = asyncHandler(async (req, res) => {
+  const avatarLocalPath = req.file?.path;
 
-  const user = await User.findById(userId);
-
-  if (!user) {
-    throw new ApiError(400, "User not exists");
-  }
-  let avatarLocalPath = req.file?.avatar;
+  // Check if the avatar file is provided
   if (!avatarLocalPath) {
-    throw new ApiError(400, "Avatar path not exist");
+    throw new ApiError(400, "Avatar file is missing");
   }
-  if (avatarLocalPath) {
-    if (user.profileImg) {
-      await cloudinary.uploader.destroy(
-        user.avatar.split("/").pop().split(".")[0]
-      );
+
+  // Find the user by their ID
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // If the user already has an avatar, delete the previous one from Cloudinary
+  if (user.profilePic && user.profilePic.startsWith("https")) {
+    const publicId = user.profilePic.split("/").pop().split(".")[0]; // Extract Cloudinary public ID
+    try {
+      await cloudinary.uploader.destroy(publicId); // Delete old avatar
+      const uploadedAvatar = await uploadOnCloudinary(avatarLocalPath);
+      await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+          $set: {
+            profilePic: uploadedAvatar,
+          },
+        },
+        { new: true }
+      ).select("-password");
+    } catch (error) {
+      throw new ApiError(500, "Error deleting old avatar");
     }
-    const uploadedResponse = await uploadOnCloudinary(avatarLocalPath);
-    user.avatar = uploadedResponse;
+  } else {
+    const uploadedAvatar = await uploadOnCloudinary(avatarLocalPath);
+    
+    await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $set: {
+          profilePic: uploadedAvatar,
+        },
+      },
+      { new: true }
+    ).select("-password");
+    console.log("helloe");
   }
-  user = await user.save();
 
   return res
-    .state(200)
-    .json(new ApiResponse(200, {}, "avatar set Successfully"));
+    .status(200)
+    .json(new ApiResponse(200, {}, "Avatar updated successfully"));
 });
 
+// Updating the resume here
 const updateResume = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
+  const resumeLocalPath = req.file?.path;
 
-  const user = await User.findById(userId);
-
-  if (!user) {
-    throw new ApiError(400, "User not exists");
-  }
-  let resumeLocalPath = req.file?.resume;
+  // Check if the avatar file is provided
   if (!resumeLocalPath) {
-    throw new ApiError(400, "Avatar path not exist");
+    throw new ApiError(400, "Avatar file is missing");
   }
-  if (resumeLocalPath) {
-    if (user.profileImg) {
-      await cloudinary.uploader.destroy(
-        user.resume.split("/").pop().split(".")[0]
-      );
+
+  // Find the user by their ID
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // If the user already has an avatar, delete the previous one from Cloudinary
+  if (user.resume && user.resume.startsWith("https")) {
+    const publicId = user.resume.split("/").pop().split(".")[0]; // Extract Cloudinary public ID
+    try {
+      await cloudinary.uploader.destroy(publicId); // Delete old avatar
+      const uploadedResume = await uploadOnCloudinary(resumeLocalPath);
+      await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+          $set: {
+            resume: uploadedResume,
+          },
+        },
+        { new: true }
+      ).select("-password");
+    } catch (error) {
+      throw new ApiError(500, "Error deleting old avatar");
     }
-    const uploadedResponse = await uploadOnCloudinary(resumeLocalPath);
-    user.resume = uploadedResponse;
+  } else {
+    const uploadedResume = await uploadOnCloudinary(resumeLocalPath);
+    
+    await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $set: {
+          resume: uploadedResume,
+        },
+      },
+      { new: true }
+    ).select("-password");
   }
-  user = await user.save();
 
   return res
-    .state(200)
-    .json(new ApiResponse(200, {}, "resume set Successfully"));
+    .status(200)
+    .json(new ApiResponse(200, {}, "Resume updated successfully"));
 });
 
 // Updating the password here
@@ -177,13 +226,11 @@ const updatePassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Password updated successfully."));
 });
 
-
 // Get the all data of the user
 const getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select(
     "-password -verifyCode -verifyCodeExpiry -__v"
   ); // Exclude unnecessary fields
-  
 
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -213,4 +260,4 @@ const getMe = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, responseData, "User data fetched successfully"));
 });
 
-export { updateProfile, updateAvatar, updateResume, updatePassword, getMe };
+export { updateProfile, updateUserAvatar, updateResume, updatePassword, getMe };
