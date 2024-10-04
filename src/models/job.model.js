@@ -1,20 +1,43 @@
 import mongoose from "mongoose";
 
-const jobSchema = new mongoose.Schema({
-  employer: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true, 
+const jobSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    companyName: { type: String, required: true },
+    location: {
+      city: { type: String },
+      state: { type: String },
+      country: { type: String },
+    },
+    employmentType: { type: String, required: true }, // full-time, part-time, etc.
+    remote: { type: Boolean, default: false },
+    salaryRange: {
+      minSalary: { type: Number },
+      maxSalary: { type: Number },
+      currency: { type: String, default: "USD" },
+    },
+    experienceLevel: {
+      type: String,
+      enum: ["Entry Level", "Mid Level", "Senior Level"],
+    },
+    jobType: { type: String, required: true }, // e.g., Technical, Marketing
+    skills: [String],
+    postedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the employer
+    postedDate: { type: Date, default: Date.now },
+    applicationDeadline: { type: Date },
+    isActive: { type: Boolean, default: true },
+    requiredEducation: { type: String },
+    requiredLanguages: [String],
+    numberOfOpenings: { type: Number },
+    applicationLink: { type: String },
+    contactEmail: { type: String },
+    applicationInstructions: { type: String },
+    benefits: [String], // e.g., Health Insurance, Paid Time Off
+    workHours: { type: String }, // e.g., "9 AM - 5 PM"
   },
-  title: { type: String, required: true },
-  description: { type: String, required: true },
-  industry: { type: String, required: true },
-  location: { type: String, required: true },
-  salaryRange: { type: String }, // E.g., "50,000 - 70,000"
-  requirements: [String], // Skills or qualifications required
-  postedAt: { type: Date, default: Date.now },
-  deadline: { type: Date }, // Job application deadline
-});
+  { timestamps: true }
+);
 
 const Job = mongoose.model("Job", jobSchema);
 export { Job };
