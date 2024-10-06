@@ -259,5 +259,10 @@ const socialAuth = asyncHandler(async (req, res) => {
   }
 });
 
+const forgotPassword = async (req, res) => {
+};
+
+const resetPassword = async (req, res) => {
+};
 
 export { register, login, logout, socialAuth };
