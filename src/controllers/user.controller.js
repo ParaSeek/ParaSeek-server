@@ -4,6 +4,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { v2 as cloudinary } from "cloudinary";
 import { uploadOnCloudinary } from "../services/cloudinary.js";
+
+
 // updating the profile
 const updateProfile = asyncHandler(async (req, res) => {
   const {
@@ -259,5 +261,6 @@ const getMe = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, responseData, "User data fetched successfully"));
 });
+
 
 export { updateProfile, updateUserAvatar, updateResume, updatePassword, getMe };

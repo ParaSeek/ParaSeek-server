@@ -3,9 +3,11 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import sendMail from "../services/sendMail.js";
+import bcrypt from "bcryptjs";
 
-// For generate the token 
+// For generate the token
 const generateAccessAndRefereshTokens = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -21,7 +23,7 @@ const generateAccessAndRefereshTokens = async (userId) => {
   }
 };
 
-// Registing the user 
+// Registing the user
 const register = asyncHandler(async (req, res) => {
   const { username, email, password, role } = req.body;
 
@@ -101,7 +103,6 @@ const register = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Verification code send Successfully"));
 });
 
-
 // Activate the user here
 export const activateUser = asyncHandler(async (req, res) => {
   const { activation_code } = req.body;
@@ -165,16 +166,15 @@ export const activateUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User verified successfully"));
 });
 
-
 // Login the user here
 const login = asyncHandler(async (req, res) => {
   const { username, password } = req.body;
-  
+
   if (!username && !password) {
     throw new ApiError(400, "Email or password is required");
   }
-  
-  const user = await User.findOne({username});
+
+  const user = await User.findOne({ username });
 
   if (!user) {
     throw new ApiError(404, "User does not exist");
@@ -226,7 +226,6 @@ const logout = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged Out"));
 });
 
-
 // Social Auth for user
 const socialAuth = asyncHandler(async (req, res) => {
   const { email, name } = req.body;
@@ -259,10 +258,63 @@ const socialAuth = asyncHandler(async (req, res) => {
   }
 });
 
-const forgotPassword = async (req, res) => {
-};
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
 
-const resetPassword = async (req, res) => {
-};
+  const user = await User.find({ email });
 
-export { register, login, logout, socialAuth };
+  if (!user) {
+    throw new ApiError(400, "User not exist");
+  }
+
+  const resetToken = crypto.randomBytes(20).toString("hex");
+  const resetTokenExpiresAt = Date.now() + 1 * 60 * 60 * 1000;
+
+  user.resetPasswordToken = resetToken;
+  user.resetPasswordExpiresAt = resetTokenExpiresAt;
+
+  await user.save();
+
+  //send mail
+  const resetLink = `${process.env.RESET_URL}/${user.resetPasswordToken}`;
+  const data = { user: { name: user.username, forgotToken: resetLink } };
+  await sendMail({
+    email: user.email,
+    subject: "Forgot Password",
+    template: "forgotPassword-mail.ejs",
+    data,
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password reset link sent to your email"));
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  const user = await User.findOne({
+    resetPasswordToken: token,
+    resetPasswordExpiresAt: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Reset link does not match");
+  }
+
+  if (!password) {
+    throw new ApiError(400, "");
+  }
+  // update password
+  user.password = password;
+  user.resetPasswordExpiresAt = undefined;
+  user.resetPasswordToken = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password reset successfully"));
+});
+
+export { register, login, logout, socialAuth,forgotPassword,resetPassword };
