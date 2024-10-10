@@ -168,13 +168,13 @@ export const activateUser = asyncHandler(async (req, res) => {
 
 // Login the user here
 const login = asyncHandler(async (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
-  if (!username && !password) {
+  if (!email && !password) {
     throw new ApiError(400, "Email or password is required");
   }
 
-  const user = await User.findOne({ username });
+  const user = await User.findOne({ email });
 
   if (!user) {
     throw new ApiError(404, "User does not exist");
@@ -261,7 +261,7 @@ const socialAuth = asyncHandler(async (req, res) => {
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
-  const user = await User.find({ email });
+  const user = await User.findOne({ email });
 
   if (!user) {
     throw new ApiError(400, "User not exist");

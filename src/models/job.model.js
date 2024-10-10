@@ -35,6 +35,7 @@ const jobSchema = new mongoose.Schema(
     applicationInstructions: { type: String },
     benefits: [String], // e.g., Health Insurance, Paid Time Off
     workHours: { type: String }, // e.g., "9 AM - 5 PM"
+    googleDriveFolderId: { type: String }, 
   },
   { timestamps: true }
 );

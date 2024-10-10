@@ -12,7 +12,6 @@ const updateProfile = asyncHandler(async (req, res) => {
     firstName,
     lastName,
     phoneNumber,
-    email,
     dob,
     gender,
     street,
@@ -24,16 +23,15 @@ const updateProfile = asyncHandler(async (req, res) => {
 
   // Check if any of the required fields are missing
   if (
-    !firstName ||
-    !lastName ||
-    !phoneNumber ||
-    !email ||
-    !dob ||
-    !gender ||
-    !street ||
-    !city ||
-    !state ||
-    !postalCode ||
+    !firstName &&
+    !lastName &&
+    !phoneNumber &&
+    !dob &&
+    !gender &&
+    !street &&
+    !city &&
+    !state &&
+    !postalCode &&
     !country
   ) {
     throw new ApiError(400, "No fields provided to update.");
@@ -59,7 +57,6 @@ const updateProfile = asyncHandler(async (req, res) => {
   if (firstName) user.firstName = firstName;
   if (lastName) user.lastName = lastName;
   if (phoneNumber) user.phoneNumber = phoneNumber;
-  if (email) user.email = email;
   if (gender) user.gender = gender;
 
   if (street || city || state || postalCode || country) {
@@ -123,7 +120,9 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     }
   } else {
     const uploadedAvatar = await uploadOnCloudinary(avatarLocalPath);
-    
+    if(!uploadedAvatar){
+      throw new ApiError(500,"Internal server error while uploading image");
+    }
     await User.findByIdAndUpdate(
       req.user?._id,
       {
@@ -262,5 +261,9 @@ const getMe = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, responseData, "User data fetched successfully"));
 });
 
+//apply for job
+const applyForJob = asyncHandler(async (req, res) => {
+  
+})
 
 export { updateProfile, updateUserAvatar, updateResume, updatePassword, getMe };
