@@ -9,6 +9,8 @@ import { qualificationRouter } from "./routes/qualification.route.js";
 import { jobPreferencesRouter } from "./routes/jobPreferences.route.js";
 import {v2 as cloudinary} from "cloudinary"
 import { jobRouter } from "./routes/job.route.js";
+import { applicationRouter } from "./routes/application.route.js";
+import { adminRouter } from "./routes/admin.route.js";
 dotenv.config();
 const app = express();
 
@@ -35,6 +37,8 @@ app.use("/api/v1/user",userRouter);
 app.use('/api/v1/qualification',qualificationRouter);
 app.use('/api/v1/jobPreferences',jobPreferencesRouter);
 app.use('/api/v1/job',jobRouter);
+app.use('/api/v1/application',applicationRouter);
+app.use('/api/v1/admin',adminRouter);
 
 // unknown route
 app.all("*", (req, res, next) => {
