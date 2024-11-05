@@ -5,7 +5,15 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import sendMail from "../services/sendMail.js";
-import bcrypt from "bcryptjs";
+
+// Register[Done]
+// Verify user otp [Done]
+// Login [Done]
+// Logout [Done]
+// Forgot Password [Done]
+// social login [Done]
+
+
 
 // For generate the token
 const generateAccessAndRefereshTokens = async (userId) => {
@@ -258,6 +266,8 @@ const socialAuth = asyncHandler(async (req, res) => {
   }
 });
 
+
+// Forgot password
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
@@ -318,3 +328,5 @@ const resetPassword = asyncHandler(async (req, res) => {
 });
 
 export { register, login, logout, socialAuth,forgotPassword,resetPassword };
+
+

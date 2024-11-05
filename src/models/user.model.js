@@ -48,7 +48,7 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Preferences",
     },
-    education: {
+    qualification: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Qualification",
     },
