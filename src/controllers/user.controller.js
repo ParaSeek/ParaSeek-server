@@ -5,6 +5,48 @@ import { User } from "../models/user.model.js";
 import { v2 as cloudinary } from "cloudinary";
 import { uploadOnCloudinary } from "../services/cloudinary.js";
 
+// Get User data [Done]
+// Update User profile [Done]
+// Update the user resume [Done]
+// update the password [Done]
+// Update the use qualification [Done]
+// Update the job preferences [Done]
+// Apply for job
+
+
+// Get the all data of the user
+const getMe = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select(
+    "-password -verifyCode -verifyCodeExpiry -__v"
+  ); // Exclude unnecessary fields
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // Validate user role and modify the response accordingly
+  let responseData;
+  console.log("keunal");
+
+  if (user.role === "job_seeker") {
+    // Job Seeker: don't include jobsPosted
+    responseData = await User.findById(req.user._id)
+      .select("-password -verifyCode -verifyCodeExpiry -__v")
+      .populate("education", "-__v") // Populate education for job seekers
+      .populate("jobPreferences", "-__v");
+  } else if (user.role === "employer") {
+    // Employer: don't include applications or education
+    responseData = await User.findById(req.user._id)
+      .select("-password -verifyCode -verifyCodeExpiry -__v")
+      .populate("jobsPosted", "-__v"); // Populate jobsPosted for employers
+  } else {
+    throw new ApiError(400, "Invalid user role");
+  }
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, responseData, "User data fetched successfully"));
+});
 
 // updating the profile
 const updateProfile = asyncHandler(async (req, res) => {
@@ -227,39 +269,7 @@ const updatePassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Password updated successfully."));
 });
 
-// Get the all data of the user
-const getMe = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id).select(
-    "-password -verifyCode -verifyCodeExpiry -__v"
-  ); // Exclude unnecessary fields
 
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
-
-  // Validate user role and modify the response accordingly
-  let responseData;
-  console.log("keunal");
-
-  if (user.role === "job_seeker") {
-    // Job Seeker: don't include jobsPosted
-    responseData = await User.findById(req.user._id)
-      .select("-password -verifyCode -verifyCodeExpiry -__v")
-      .populate("education", "-__v") // Populate education for job seekers
-      .populate("jobPreferences", "-__v");
-  } else if (user.role === "employer") {
-    // Employer: don't include applications or education
-    responseData = await User.findById(req.user._id)
-      .select("-password -verifyCode -verifyCodeExpiry -__v")
-      .populate("jobsPosted", "-__v"); // Populate jobsPosted for employers
-  } else {
-    throw new ApiError(400, "Invalid user role");
-  }
-
-  res
-    .status(200)
-    .json(new ApiResponse(200, responseData, "User data fetched successfully"));
-});
 
 //apply for job
 const applyForJob = asyncHandler(async (req, res) => {

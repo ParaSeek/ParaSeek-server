@@ -5,50 +5,54 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { google } from "googleapis";
 import { User } from "../models/user.model.js";
 
-// Initialize OAuth2 Client
+
+// job creation [Done]
+// job updation [Done]
+// job deletion [Done]
+// get all jobs with filters [Done]
+// get all jobs created by user [Done]
+// job updation status [Done]
+
+
+
+// OAuth2 Client Initialization
 const oauth2Client = new google.auth.OAuth2(
   process.env.CLIENT_ID,
   process.env.CLIENT_SECRET,
   process.env.REDIRECT_URI
 );
 
-// Generate Auth URL
-const getAuthUrl = () => {
-  return oauth2Client.generateAuthUrl({
+// Generate Google Auth URL
+const getAuthUrl = () => 
+  oauth2Client.generateAuthUrl({
     access_type: "offline",
-    scope: ["https://www.googleapis.com/auth/drive.file"], // Specific Drive scope
+    scope: ["https://www.googleapis.com/auth/drive.file"],
   });
-};
 
-// Redirect employer to authorize with Google :- when a user click to link google drive the he/she click on the link
-// When they click on link the endpoint hit this one and send a url you need to redirect to this url
+// Employer Authorization Controller
 const authorizeEmployer = asyncHandler(async (req, res) => {
   const authUrl = getAuthUrl();
-  return res
-    .status(201)
-    .json(new ApiResponse(201, authUrl, "redirect url created")); // Redirect to Google auth URL
+  return res.status(201).json(
+    new ApiResponse(201, authUrl, "Redirect URL created")
+  );
 });
 
-// When he or she give the permission the drive redirect to url like this :-http://localhost:3000/oauth2callback/?code=kdsnlslei
-// now you need to send a request to backend to this code with query parameter
+// Google Drive Authorization Callback
 const drive_verify = asyncHandler(async (req, res) => {
-  const { code } = req.query; // Get the authorization code from the query parameters
+  const { code } = req.query;
   console.log(code);
+
   const { tokens } = await oauth2Client.getToken(code); // Exchange code for tokens
   await User.findByIdAndUpdate(
     req.user._id,
-    {
-      $set: {
-        tokens: tokens,
-      },
-    },
+    { $set: { tokens } },
     { new: true }
   );
-  // oauth2Client.setCredentials(tokens); // Store the credentials
-  return res.status(201).json(new ApiResponse(201, {}, "success"));
+
+  return res.status(201).json(new ApiResponse(201, {}, "Authorization successful"));
 });
 
-// Job creation controller
+// Job Creation Controller
 const jobCreated = asyncHandler(async (req, res) => {
   const {
     title,
@@ -67,67 +71,48 @@ const jobCreated = asyncHandler(async (req, res) => {
     workHours,
   } = req.body;
 
-  // Basic validation for required fields
-  if (
-    !title ||
-    !description ||
-    !companyName ||
-    !location ||
-    !employmentType ||
-    !jobType ||
-    !skills ||
-    !applicationDeadline ||
-    !contactEmail
-  ) {
+  // Validate Required Fields
+  if (!title || !description || !companyName || !location || !employmentType || !jobType || !skills || !applicationDeadline || !contactEmail) {
     throw new ApiError(400, "Please fill in all the required fields");
   }
 
-  // Basic email validation
+  // Validate Email Format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(contactEmail)) {
     throw new ApiError(400, "Invalid email format");
   }
-  const tokens = req.user.tokens; // If using session
-  // OR if using a database, fetch the user's stored tokens
-  // const tokens = await getUserTokens(req.user.id); (Example for database storage)
 
+  // Retrieve User's Google Drive Tokens
+  const tokens = req.user.tokens;
   if (!tokens) {
     return res.status(401).json(new ApiResponse(401, {}, "User not authenticated with Google"));
   }
 
-  // Create a new OAuth2 client
-  const oauth2Client = new google.auth.OAuth2(
-    process.env.CLIENT_ID,
-    process.env.CLIENT_SECRET,
-    process.env.REDIRECT_URI
-  );
-
-  // Set the credentials using the stored tokens
+  // Initialize OAuth2 Client
   oauth2Client.setCredentials(tokens);
-  // OAuth2 client from user session
   const drive = google.drive({ version: "v3", auth: oauth2Client });
 
   let googleDriveFolderId;
 
   try {
+    // Create a new folder in Google Drive
     const folderMetadata = {
-      name: title, // The job title as the folder name
+      name: title, // Job title as folder name
       mimeType: "application/vnd.google-apps.folder",
-      parents: ["root"], // Optional: Can specify a specific parent folder here
+      parents: ["root"], // Optional: Specify parent folder
     };
 
-    // Create folder in Google Drive
     const folder = await drive.files.create({
       resource: folderMetadata,
       fields: "id",
     });
 
-    googleDriveFolderId = folder.data.id; // Extract folder ID
+    googleDriveFolderId = folder.data.id;
   } catch (error) {
     throw new ApiError(500, "Failed to create Google Drive folder");
   }
 
-  // Create new job in the database
+  // Create Job Entry in Database
   const job = new Job({
     title,
     description,
@@ -141,19 +126,15 @@ const jobCreated = asyncHandler(async (req, res) => {
     skills,
     postedBy: req.user._id,
     applicationDeadline,
-    googleDriveFolderId, // Save folder ID in job entry
+    googleDriveFolderId, // Save Drive folder ID
     contactEmail,
     benefits,
     workHours,
   });
 
-  // Save job to the database
+  // Save Job Entry and Respond
   const createdJob = await job.save();
-
-  // Respond with created job details
-  return res
-    .status(201)
-    .json(new ApiResponse(201, createdJob, "Job posted successfully"));
+  return res.status(201).json(new ApiResponse(201, createdJob, "Job posted successfully"));
 });
 
 // Job update controller

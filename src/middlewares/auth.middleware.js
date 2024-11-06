@@ -29,4 +29,19 @@ const verifyJWT = asyncHandler(async (req, res, next) => {
   }
 });
 
+// Validate user role
+export const authorizeRoles = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user?.role || "")) {
+      return next(
+        new ErrorHandler(
+          `Role: ${req.user?.role} is not allowed to access this resource`,
+          403
+        )
+      );
+    }
+    next();
+  };
+};
+
 export default verifyJWT;

@@ -63,7 +63,7 @@ const createAndUpdateQualification = asyncHandler(async (req, res) => {
     }
 
     // Link the new qualification to the user
-    user.education = savedQualification._id;
+    user.qualification = savedQualification._id;
     await user.save();
 
     res.status(201).json(
