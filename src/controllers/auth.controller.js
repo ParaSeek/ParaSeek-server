@@ -6,13 +6,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import sendMail from "../services/sendMail.js";
 
-// Register[Done]
-// Verify user otp [Done]
-// Login [Done]
-// Logout [Done]
-// Forgot Password [Done]
-// social login [Done]
-
+//WIP : Manage the refresh token to generate new access or refresh token also
 
 
 // For generate the token
@@ -77,6 +71,7 @@ const register = asyncHandler(async (req, res) => {
       username,
       email,
       password,
+      role,
       verifyCode,
       verifyCodeExpiry: expiryDate,
       isVerified: false,
@@ -84,7 +79,7 @@ const register = asyncHandler(async (req, res) => {
 
     await newUser.save();
   }
-  console.log("Helllooo");
+
   // Sending the mail
   const data = { user: { name: username }, activationCode: verifyCode };
   await sendMail({
@@ -93,7 +88,6 @@ const register = asyncHandler(async (req, res) => {
     template: "activation-mail.ejs",
     data,
   });
-  console.log("Helllooo222222");
   const user = await User.findOne({ email });
   const userId = user._id;
   const token = jwt.sign({ userId }, process.env.ACTIVATION_TOKEN_SECRET, {
@@ -110,6 +104,7 @@ const register = asyncHandler(async (req, res) => {
     })
     .json(new ApiResponse(200, {}, "Verification code send Successfully"));
 });
+
 
 // Activate the user here
 export const activateUser = asyncHandler(async (req, res) => {
@@ -204,20 +199,30 @@ const login = asyncHandler(async (req, res) => {
 
   const loggedInUser = await User.findById(user._id);
 
-  const options = {
-    httpOnly: false,
-    secure: false,
+  // Set cookie options with expiration times
+  const accessTokenOptions = {
+    httpOnly: true,
+    secure: true, // Set to `true` in production for HTTPS
+    maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days in milliseconds
   };
-  let data = {
+
+  const refreshTokenOptions = {
+    httpOnly: true,
+    secure: true, // Set to `true` in production for HTTPS
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+  };
+
+  const data = {
     _id: loggedInUser._id,
     username: loggedInUser.username,
     email: loggedInUser.email,
   };
+
   return res
     .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json(new ApiResponse(200, data, "User logged In Successfully"));
+    .cookie("accessToken", accessToken, accessTokenOptions)
+    .cookie("refreshToken", refreshToken, refreshTokenOptions)
+    .json(new ApiResponse(200, data, "User logged in successfully"));
 });
 
 // Logout the user
@@ -300,6 +305,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Password reset link sent to your email"));
 });
 
+//Reset password
 const resetPassword = asyncHandler(async (req, res) => {
   const { token } = req.params;
   const { password } = req.body;

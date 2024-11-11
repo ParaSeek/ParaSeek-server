@@ -11,9 +11,9 @@ import verifyJWT from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 const userRouter = express.Router();
 
+userRouter.get("/me", verifyJWT, getMe);
 userRouter.post("/update-profile", verifyJWT, updateProfile);
 userRouter.post("/update-password", verifyJWT, updatePassword);
-userRouter.get("/me", verifyJWT, getMe);
 userRouter.post(
   "/update-avatar",
   verifyJWT,

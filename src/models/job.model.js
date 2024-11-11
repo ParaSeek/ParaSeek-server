@@ -1,5 +1,20 @@
 import mongoose from "mongoose";
 
+const jobQuestionSchema = new mongoose.Schema(
+  {
+    jobQuestions: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Job",
+    },
+    questions: [
+      {
+        type: String,
+      },
+    ],
+  },
+  { timestamps: true }
+);
+
 const jobSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
@@ -35,10 +50,12 @@ const jobSchema = new mongoose.Schema(
     applicationInstructions: { type: String },
     benefits: [String], // e.g., Health Insurance, Paid Time Off
     workHours: { type: String }, // e.g., "9 AM - 5 PM"
-    googleDriveFolderId: { type: String }, 
+    googleDriveFolderId: { type: String },
   },
   { timestamps: true }
 );
 
 const Job = mongoose.model("Job", jobSchema);
-export { Job };
+const JobQuestion = mongoose.model("JobQuestion", jobQuestionSchema);
+
+export { Job, JobQuestion };

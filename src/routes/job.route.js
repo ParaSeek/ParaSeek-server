@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  addQuestions,
   authorizeEmployer,
   drive_verify,
   getAllJobs,
@@ -14,6 +15,7 @@ import verifyJWT from "../middlewares/auth.middleware.js";
 const jobRouter = express.Router();
 
 jobRouter.post("/job-created", verifyJWT, jobCreated);
+jobRouter.post("/add-questions/:jobId", verifyJWT, addQuestions);
 jobRouter.patch("/job-updated/:job_id", verifyJWT, jobUpdated);
 jobRouter.delete("/job-delete/:job_id", verifyJWT, jobDeleted);
 jobRouter.get("/get-jobs", verifyJWT, getAllJobs);

@@ -4,20 +4,13 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { v2 as cloudinary } from "cloudinary";
 import { uploadOnCloudinary } from "../services/cloudinary.js";
-
-// Get User data [Done]
-// Update User profile [Done]
-// Update the user resume [Done]
-// update the password [Done]
-// Update the use qualification [Done]
-// Update the job preferences [Done]
-// Apply for job
+import getUser from "../helper/getUser.js";
 
 
 // Get the all data of the user
 const getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select(
-    "-password -verifyCode -verifyCodeExpiry -__v"
+    "-password -verifyCode -verifyCodeExpiry -resetPasswordToken -resetPasswordExpiresAt -__v"
   ); // Exclude unnecessary fields
 
   if (!user) {
@@ -31,8 +24,8 @@ const getMe = asyncHandler(async (req, res) => {
   if (user.role === "job_seeker") {
     // Job Seeker: don't include jobsPosted
     responseData = await User.findById(req.user._id)
-      .select("-password -verifyCode -verifyCodeExpiry -__v")
-      .populate("education", "-__v") // Populate education for job seekers
+      .select("-password -verifyCode -verifyCodeExpiry -__v -jobsPosted")
+      .populate("qualification", "-__v") // Populate education for job seekers
       .populate("jobPreferences", "-__v");
   } else if (user.role === "employer") {
     // Employer: don't include applications or education
@@ -114,18 +107,14 @@ const updateProfile = asyncHandler(async (req, res) => {
   // Save the updated user data
   user = await user.save();
 
-  // Fetch updated user details without sensitive fields
-  const updatedUser = await User.findById(user._id).select(
-    "-password -jobsPosted -verifyCode -verifyCodeExpiry"
-  );
-
   // Send a success response
   return res
     .status(200)
     .json(
-      new ApiResponse(200, updatedUser, "User profile updated successfully.")
+      new ApiResponse(200, await getUser(user._id), "User profile updated successfully.")
     );
 });
+
 
 // updating the avatar here
 const updateUserAvatar = asyncHandler(async (req, res) => {
@@ -179,8 +168,9 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, {}, "Avatar updated successfully"));
+    .json(new ApiResponse(200, await getUser(user._id), "Avatar updated successfully"));
 });
+
 
 // Updating the resume here
 const updateResume = asyncHandler(async (req, res) => {
@@ -202,7 +192,7 @@ const updateResume = asyncHandler(async (req, res) => {
     const publicId = user.resume.split("/").pop().split(".")[0]; // Extract Cloudinary public ID
     try {
       await cloudinary.uploader.destroy(publicId); // Delete old avatar
-      const uploadedResume = await uploadOnCloudinary(resumeLocalPath);
+      const uploadedResume = await uploadOnCloudinary(resumeLocalPath,"raw");
       await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -231,7 +221,7 @@ const updateResume = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, {}, "Resume updated successfully"));
+    .json(new ApiResponse(200, await getUser(user._id), "Resume updated successfully"));
 });
 
 // Updating the password here
@@ -266,14 +256,8 @@ const updatePassword = asyncHandler(async (req, res) => {
   // Respond with a success message
   res
     .status(200)
-    .json(new ApiResponse(200, {}, "Password updated successfully."));
+    .json(new ApiResponse(200, await getUser(user._id), "Password updated successfully."));
 });
 
-
-
-//apply for job
-const applyForJob = asyncHandler(async (req, res) => {
-  
-})
 
 export { updateProfile, updateUserAvatar, updateResume, updatePassword, getMe };

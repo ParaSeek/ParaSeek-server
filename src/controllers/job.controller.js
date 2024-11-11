@@ -1,19 +1,9 @@
-import { Job } from "../models/job.model.js";
+import { Job, JobQuestion } from "../models/job.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { google } from "googleapis";
 import { User } from "../models/user.model.js";
-
-
-// job creation [Done]
-// job updation [Done]
-// job deletion [Done]
-// get all jobs with filters [Done]
-// get all jobs created by user [Done]
-// job updation status [Done]
-
-
 
 // OAuth2 Client Initialization
 const oauth2Client = new google.auth.OAuth2(
@@ -23,36 +13,41 @@ const oauth2Client = new google.auth.OAuth2(
 );
 
 // Generate Google Auth URL
-const getAuthUrl = () => 
+const getAuthUrl = () =>
   oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: ["https://www.googleapis.com/auth/drive.file"],
   });
 
-// Employer Authorization Controller
+//2. Employer Authorization Controller
 const authorizeEmployer = asyncHandler(async (req, res) => {
   const authUrl = getAuthUrl();
-  return res.status(201).json(
-    new ApiResponse(201, authUrl, "Redirect URL created")
-  );
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(201, authUrl + "&prompt=consent", "Redirect URL created")
+    );
 });
 
-// Google Drive Authorization Callback
+//1. Google Drive Authorization Callback
 const drive_verify = asyncHandler(async (req, res) => {
   const { code } = req.query;
   console.log(code);
 
   const { tokens } = await oauth2Client.getToken(code); // Exchange code for tokens
+  console.log(tokens);
   await User.findByIdAndUpdate(
     req.user._id,
     { $set: { tokens } },
     { new: true }
   );
 
-  return res.status(201).json(new ApiResponse(201, {}, "Authorization successful"));
+  return res
+    .status(201)
+    .json(new ApiResponse(201, {}, "Authorization successful"));
 });
 
-// Job Creation Controller
+//3. Job Creation Controller
 const jobCreated = asyncHandler(async (req, res) => {
   const {
     title,
@@ -70,9 +65,22 @@ const jobCreated = asyncHandler(async (req, res) => {
     benefits,
     workHours,
   } = req.body;
-
+  const user = await User.findById(req.user._id);
+  if (user.role === "job_seeker") {
+    throw new ApiError(400, "You are not authorized to create a job");
+  }
   // Validate Required Fields
-  if (!title || !description || !companyName || !location || !employmentType || !jobType || !skills || !applicationDeadline || !contactEmail) {
+  if (
+    !title ||
+    !description ||
+    !companyName ||
+    !location ||
+    !employmentType ||
+    !jobType ||
+    !skills ||
+    !applicationDeadline ||
+    !contactEmail
+  ) {
     throw new ApiError(400, "Please fill in all the required fields");
   }
 
@@ -85,7 +93,9 @@ const jobCreated = asyncHandler(async (req, res) => {
   // Retrieve User's Google Drive Tokens
   const tokens = req.user.tokens;
   if (!tokens) {
-    return res.status(401).json(new ApiResponse(401, {}, "User not authenticated with Google"));
+    return res
+      .status(401)
+      .json(new ApiResponse(401, {}, "User not authenticated with Google"));
   }
 
   // Initialize OAuth2 Client
@@ -133,8 +143,43 @@ const jobCreated = asyncHandler(async (req, res) => {
   });
 
   // Save Job Entry and Respond
-  const createdJob = await job.save();
-  return res.status(201).json(new ApiResponse(201, createdJob, "Job posted successfully"));
+  const createdJob = await job.save().select("-googleDriveFolderId");
+  return res
+    .status(201)
+    .json(new ApiResponse(201, createdJob, "Job posted successfully"));
+});
+
+const addQuestions = asyncHandler(async (req, res) => {
+  const { jobId } = req.params;
+  const { questions } = req.body;
+
+  if (!questions || !Array.isArray(questions) || questions.length === 0) {
+    throw new ApiError(400, "Please provide a valid array of questions");
+  }
+
+  const job = await Job.findById(jobId);
+
+  if(job.postedBy.toString() !== req.user._id.toString()){
+    throw new ApiError(404, "You are not the owner of the job");
+  }
+  let jobQuestionDoc = await JobQuestion.findOne(jobId);
+
+  if (!jobQuestionDoc) {
+    jobQuestionDoc = new JobQuestion({
+      jobId,
+      questions: [],
+    });
+  }
+
+  questions.forEach((question) => {
+    jobQuestionDoc.questions.push(question);
+  });
+
+  await jobQuestionDoc.save();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, jobQuestionDoc, "Questions added successfully"));
 });
 
 // Job update controller
@@ -174,6 +219,19 @@ const jobUpdated = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Job not found");
   }
 
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new ApiError(404, "User not exist");
+  }
+
+  if (user.role !== "employer") {
+    throw new ApiError(404, "You are not authorized to update the job");
+  }
+
+  if (user.id.toString() !== job.postedBy.toString()) {
+    throw new ApiError(404, "You are not authorized to update it");
+  }
   // Update only provided fields (partial update)
   job.title = title || job.title;
   job.description = description || job.description;
@@ -214,6 +272,19 @@ const jobDeleted = asyncHandler(async (req, res) => {
 
   if (!job_id) {
     throw new ApiError(400, "job id not provided");
+  }
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new ApiError(404, "User not exist");
+  }
+
+  if (user.role !== "employer") {
+    throw new ApiError(404, "You are not authorized to delete the job");
+  }
+
+  if (user.id.toString() !== job.postedBy.toString()) {
+    throw new ApiError(404, "You are not authorized to deleted it");
   }
   // Find the job by ID
   const job = await Job.findByIdAndDelete(job_id);
@@ -334,6 +405,20 @@ const jobStatusUpdate = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Job not found");
   }
 
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new ApiError(404, "User not exist");
+  }
+
+  if (user.role !== "employer") {
+    throw new ApiError(404, "You are not authorized to update the status");
+  }
+
+  if (user.id.toString() !== job.postedBy.toString()) {
+    throw new ApiError(404, "You are not authorized to update it");
+  }
+
   // Update the isActive status
   if (job.isActive === false) {
     job.isActive = true;
@@ -359,4 +444,5 @@ export {
   jobStatusUpdate,
   authorizeEmployer,
   drive_verify,
+  addQuestions
 };

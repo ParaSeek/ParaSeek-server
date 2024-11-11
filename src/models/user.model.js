@@ -28,14 +28,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    verifyCode: {
-      type: String,
-      default:"",
-    },
-    verifyCodeExpiry: {
-      type: Date,
-      default:null,
-    },
     location: {
       street: { type: String },
       city: { type: String },
@@ -65,11 +57,19 @@ const userSchema = new mongoose.Schema(
       },
     ],
     resume: { type: String },
-    resetPasswordToken: String,
-    resetPasswordExpiresAt: Date,
     tokens:{
       type:Object
-    }
+    },
+    verifyCode: {
+      type: String,
+      default:"",
+    },    
+    verifyCodeExpiry: {
+      type: Date,
+      default:null,
+    },
+    resetPasswordToken: String,
+    resetPasswordExpiresAt: Date,
   },
   { timestamps: true }
 );
