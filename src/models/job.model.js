@@ -19,7 +19,7 @@ const jobSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     description: { type: String, required: true },
-    companyName: { type: String, required: true },
+    companyName: { type: String, required: true, unique: true },
     location: {
       city: { type: String },
       state: { type: String },

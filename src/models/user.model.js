@@ -56,6 +56,12 @@ const userSchema = new mongoose.Schema(
         ref: "Job",
       },
     ],
+    companies: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Company",
+      }
+    ],
     resume: { type: String },
     tokens:{
       type:Object

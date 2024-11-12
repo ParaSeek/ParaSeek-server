@@ -11,10 +11,11 @@ import {
   jobUpdated,
 } from "../controllers/job.controller.js";
 import verifyJWT from "../middlewares/auth.middleware.js";
+import verfiyEmployer from "../middlewares/verifyEmployer.middleware.js";
 
 const jobRouter = express.Router();
 
-jobRouter.post("/job-created", verifyJWT, jobCreated);
+jobRouter.post("/job-created", verifyJWT,verfiyEmployer, jobCreated);
 jobRouter.post("/add-questions/:jobId", verifyJWT, addQuestions);
 jobRouter.patch("/job-updated/:job_id", verifyJWT, jobUpdated);
 jobRouter.delete("/job-delete/:job_id", verifyJWT, jobDeleted);
