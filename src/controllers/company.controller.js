@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { v2 as cloudinary } from "cloudinary";
 import { uploadOnCloudinary } from "../services/cloudinary.js";
 import Company from "../models/company.model.js";
+import {User} from "../models/user.model.js"
 
 // Controller to create a new company
 const createCompany = asyncHandler(async (req, res) => {
@@ -28,7 +29,6 @@ const createCompany = asyncHandler(async (req, res) => {
   const company = await Company.create({
     companyName,
     gstNumber,
-    companyLogo,
     description,
     Headquarters,
     companySize,
@@ -38,7 +38,12 @@ const createCompany = asyncHandler(async (req, res) => {
     companyOwner: req.user._id,
   });
 
+
   if (company) {
+    const user = await User.findById(req.user._id);
+    user.companies.push(company._id);
+    await user.save();
+
     return res
       .status(200)
       .json(new ApiResponse(200, company, "Company created successfully"));
@@ -109,7 +114,7 @@ const getCompany = asyncHandler(async (req, res) => {
 // Controller to get a company's details by its ID
 const getCompanyCreatedByUser = asyncHandler(async (req, res) => {
   // Find the company by ID and populate related fields
-  const company = await Company.find(req.user._id);
+  const company = await Company.find({ companyOwner: req.user._id});
 
   if (company) {
     return res.status(200).json(new ApiResponse(200, company, "success"));

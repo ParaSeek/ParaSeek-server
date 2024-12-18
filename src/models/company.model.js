@@ -11,7 +11,7 @@ const companySchema = new mongoose.Schema({
     default: true,
   },
   gstNumber: {
-    type: Number,
+    type: String,
     required: true,
     unique: true,
   },
