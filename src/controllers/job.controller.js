@@ -17,7 +17,7 @@ const getAuthUrl = () =>
   oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: ["https://www.googleapis.com/auth/drive.file"],
-  });
+});
 
 //2. Employer Authorization Controller
 const authorizeEmployer = asyncHandler(async (req, res) => {

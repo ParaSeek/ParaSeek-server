@@ -9,7 +9,11 @@ const companySchema = new mongoose.Schema({
   gstVerified: {
     type: Boolean,
     default: true,
+  },
+  gstNumber: {
+    type: Number,
     required: true,
+    unique: true,
   },
   jobs: [
     {
@@ -24,37 +28,39 @@ const companySchema = new mongoose.Schema({
     },
   ],
   companyLogo: {
-    type: String
-  },
-  description: {
-    type: String
-  },
-  Headquarters:{
     type: String,
   },
-  companySize:{
-    type: String
+  description: {
+    type: String,
+  },
+  websiteLink: {
+    type: String,
+    required: true,
+  },
+  Headquarters: {
+    type: String,
+  },
+  companySize: {
+    type: String,
   },
   industry: {
     type: String,
   },
   specialties: {
-    type: String
-  },
-  overview: {
     type: String,
   },
-  following:[
+  followers: [
     {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-    }
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
   ],
   companyOwner: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  }
+    ref: "User",
+    required: true,
+  },
 });
 
-const Company = mongoose.model("Company",companySchema);
+const Company = mongoose.model("Company", companySchema);
 export default Company;

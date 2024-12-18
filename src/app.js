@@ -7,17 +7,18 @@ import { authRouter } from "./routes/auth.route.js";
 import { userRouter } from "./routes/user.route.js";
 import { qualificationRouter } from "./routes/qualification.route.js";
 import { jobPreferencesRouter } from "./routes/jobPreferences.route.js";
-import {v2 as cloudinary} from "cloudinary"
+import { v2 as cloudinary } from "cloudinary";
 import { jobRouter } from "./routes/job.route.js";
 import { applicationRouter } from "./routes/application.route.js";
 import { adminRouter } from "./routes/admin.route.js";
+import companyRouter from "./routes/company.route.js";
 dotenv.config();
 const app = express();
 
-cloudinary.config({ 
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
-  api_key: process.env.CLOUDINARY_API_KEY, 
-  api_secret: process.env.CLOUDINARY_API_SECRET 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 app.use(
@@ -33,12 +34,13 @@ app.use(cookieParser());
 
 // auth route
 app.use("/api/v1/auth", authRouter);
-app.use("/api/v1/user",userRouter);
-app.use('/api/v1/qualification',qualificationRouter);
-app.use('/api/v1/jobPreferences',jobPreferencesRouter);
-app.use('/api/v1/job',jobRouter);
-app.use('/api/v1/application',applicationRouter);
-app.use('/api/v1/admin',adminRouter);
+app.use("/api/v1/user", userRouter);
+app.use("/api/v1/qualification", qualificationRouter);
+app.use("/api/v1/jobPreferences", jobPreferencesRouter);
+app.use("/api/v1/job", jobRouter);
+app.use("/api/v1/application", applicationRouter);
+app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/company", companyRouter);
 
 // unknown route
 app.all("*", (req, res, next) => {

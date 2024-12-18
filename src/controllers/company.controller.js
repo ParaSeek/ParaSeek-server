@@ -9,18 +9,17 @@ import Company from "../models/company.model.js";
 const createCompany = asyncHandler(async (req, res) => {
   const {
     companyName,
-    gstVerified,
+    gstNumber,
     description,
     Headquarters,
     companySize,
     industry,
+    websiteLink,
     specialties,
-    overview,
-    companyOwner,
   } = req.body;
 
   // Check if the company already exists
-  const companyExists = await Company.findOne({ companyName });
+  const companyExists = await Company.findOne({ companyName, gstNumber });
   if (companyExists) {
     throw new ApiError(400, "Company already exists");
   }
@@ -28,15 +27,15 @@ const createCompany = asyncHandler(async (req, res) => {
   // Create a new company
   const company = await Company.create({
     companyName,
-    gstVerified,
+    gstNumber,
     companyLogo,
     description,
     Headquarters,
     companySize,
     industry,
     specialties,
-    overview,
-    companyOwner,
+    websiteLink,
+    companyOwner: req.user._id,
   });
 
   if (company) {
@@ -68,6 +67,28 @@ const hireEmployer = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, company, "Employer added successfully"));
 });
 
+// Controller to hire an employer by adding a user to the employers array
+const follow = asyncHandler(async (req, res) => {
+  const { companyId } = req.body;
+  // Find the company and add the employer if it exists
+  const company = await Company.findById(companyId);
+  if (!company) {
+    throw new ApiError(404, "Company not found");
+  }
+
+  if (!company.followers.includes(req.user._id)) {
+    company.followers.push(req.user._id);
+    await company.save();
+  } else {
+    company.followers.pop(req.user._id);
+    await company.save();
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, company, "Employer added successfully"));
+});
+
 // Controller to get a company's details by its ID
 const getCompany = asyncHandler(async (req, res) => {
   const companyId = req.params.id;
@@ -83,6 +104,27 @@ const getCompany = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, company, "success"));
   } else {
     throw new ApiError(404, "Company not found");
+  }
+});
+// Controller to get a company's details by its ID
+const getCompanyCreatedByUser = asyncHandler(async (req, res) => {
+  // Find the company by ID and populate related fields
+  const company = await Company.find(req.user._id);
+
+  if (company) {
+    return res.status(200).json(new ApiResponse(200, company, "success"));
+  } else {
+    throw new ApiError(404, "Company not found");
+  }
+});
+
+// Controller to get a company's details by its ID
+const getAllCompany = asyncHandler(async (req, res) => {
+  const companies = await Company.find();
+  if (companies) {
+    return res.status(200).json(new ApiResponse(200, companies, "success"));
+  } else {
+    throw new ApiError(404, "Companies not found");
   }
 });
 
@@ -176,4 +218,7 @@ export {
   getCompany,
   hireEmployer,
   createCompany,
+  getAllCompany,
+  getCompanyCreatedByUser,
+  follow
 };
