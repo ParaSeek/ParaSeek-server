@@ -24,8 +24,12 @@ companyRouter.patch(
 );
 companyRouter.get("/get-company", getCompany);
 companyRouter.get("/get-all-company", getAllCompany);
-companyRouter.get("/follow", verifyJWT, follow);
-companyRouter.get("/get-company-created-by-user", getCompanyCreatedByUser);
+companyRouter.post("/follow", verifyJWT, follow);
+companyRouter.get(
+  "/get-company-created-by-user",
+  verifyJWT,
+  getCompanyCreatedByUser
+);
 companyRouter.patch(
   "/update-company-info",
   verifyJWT,
