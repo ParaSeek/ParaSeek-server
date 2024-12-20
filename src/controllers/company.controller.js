@@ -185,27 +185,41 @@ const fireEmployer = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Employer removed successfully"));
 });
 // Controller to hire an employer by adding a user to the employers array
+// Controller to follow or unfollow
 const follow = asyncHandler(async (req, res) => {
   const { companyId } = req.body;
-  // Find the company and add the employer if it exists
+
+  // Find the company by ID
   const company = await Company.findById(companyId);
   if (!company) {
     throw new ApiError(404, "Company not found");
   }
 
-  if (!company.followers.includes(req.user._id)) {
+  // Check if the user is already a follower
+  const isFollower = company.followers.includes(req.user._id);
+
+  if (!isFollower) {
+    // Add the user to the followers array
     company.followers.push(req.user._id);
-    await company.save();
   } else {
-    company.followers.pop(req.user._id);
-    await company.save();
+    // Remove the user from the followers array
+    company.followers = company.followers.filter(
+      (followerId) => String(followerId) !== String(req.user._id)
+    );
   }
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, company, "Employer added successfully"));
-});
+  // Save the updated company
+  await company.save();
 
+  // Respond with success message
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      company,
+      isFollower ? "Unfollowed the company successfully" : "Followed the company successfully"
+    )
+  );
+});
 // Controller to get a company's details by its ID
 const getCompany = asyncHandler(async (req, res) => {
   const companyId = req.params.id;

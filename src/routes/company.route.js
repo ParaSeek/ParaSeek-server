@@ -19,7 +19,7 @@ import {
 const companyRouter = express.Router();
 
 companyRouter.post("/create-company", verifyJWT, createCompany);
-companyRouter.post("/:companyId", verifyJWT, employerResponse);
+companyRouter.post("/response/:companyId", verifyJWT, employerResponse);
 companyRouter.patch(
   "/hire-employers/:companyId",
   verifyJWT,
