@@ -11,12 +11,14 @@ import {
   hireEmployer,
   updateInfoCompany,
   uploadLogo,
-  deleteCompany
+  deleteCompany,
+  employerResponse,
 } from "../controllers/company.controller.js";
 
 const companyRouter = express.Router();
 
 companyRouter.post("/create-company", verifyJWT, createCompany);
+companyRouter.post("/:companyId", verifyJWT, employerResponse);
 companyRouter.patch(
   "/hire-employers",
   verifyJWT,

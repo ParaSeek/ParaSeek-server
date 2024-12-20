@@ -4,7 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { v2 as cloudinary } from "cloudinary";
 import { uploadOnCloudinary } from "../services/cloudinary.js";
 import Company from "../models/company.model.js";
-import { User } from "../models/user.model.js"
+import { User } from "../models/user.model.js";
 
 // Controller to create a new company
 const createCompany = asyncHandler(async (req, res) => {
@@ -38,7 +38,6 @@ const createCompany = asyncHandler(async (req, res) => {
     companyOwner: req.user._id,
   });
 
-
   if (company) {
     const user = await User.findById(req.user._id);
     user.companies.push(company._id);
@@ -54,7 +53,7 @@ const createCompany = asyncHandler(async (req, res) => {
 
 // Controller to hire an employer by adding a user to the employers array
 const hireEmployer = asyncHandler(async (req, res) => {
-  const { companyId, employerId } = req.body;
+  const { companyId, username } = req.body;
 
   // Find the company and add the employer if it exists
   const company = await Company.findById(companyId);
@@ -62,14 +61,65 @@ const hireEmployer = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Company not found");
   }
 
-  if (!company.employers.includes(employerId)) {
-    company.employers.push(employerId);
-    await company.save();
+  const user = await User.findOne(username);
+  if (!user) {
+    throw new ApiError(404, "User not fount");
   }
+  if (user.role !== "employer") {
+    throw new ApiError(404, "User is not employer");
+  }
+  company.employers.user = user._id;
+  company.employers.hireProcess = "pending";
+
+  await company.save();
+  const data = {
+    user: { name: user.firstName + user.lastName },
+    jobTitle: "Hiring recruiter",
+    companyName: company.companyName,
+    companyId: company._id,
+  };
+
+  await sendMail({
+    email: user.email,
+    subject: "Offer letter",
+    template: "offer-latter.ejs",
+    data,
+  });
 
   return res
     .status(200)
-    .json(new ApiResponse(200, company, "Employer added successfully"));
+    .json(new ApiResponse(200, {}, "successfully send the offer later"));
+});
+
+const employerResponse = asyncHandler(async (req, res) => {
+  const { companyId } = req.params;
+  const message = req.body;
+  const userId = req.user._id;
+
+  const company = await Company.findById(companyId);
+  if (!company) {
+    throw new ApiError(404, "company not exist");
+  }
+
+  if (!company.employers.user.includes(userId)) {
+    throw new ApiError(404, "Your are not the one who offerd the job");
+  }
+
+  if (message === "reject") {
+    await Company.updateOne(
+      { _id: companyId },
+      { $pull: { employers: { user: userId } } }
+    );
+    throw new ApiError(404, "You reject the offer");
+  } else {
+    await Company.updateOne(
+      { _id: companyId, "employers.user": userId },
+      { $set: { "employers.$.hireProcess": "hired" } }
+    );
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, company, "congratulation you are hired"));
 });
 
 // Controller to hire an employer by adding a user to the employers array
@@ -246,5 +296,6 @@ export {
   getAllCompany,
   getCompanyCreatedByUser,
   follow,
-  deleteCompany
+  deleteCompany,
+  employerResponse,
 };

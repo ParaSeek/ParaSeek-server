@@ -23,8 +23,12 @@ const companySchema = new mongoose.Schema({
   ],
   employers: [
     {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      hireProcess:{
+        type: String,
+        enum: ["pending", "hired"],
+        default: "pending",
+      }
     },
   ],
   companyLogo: {
