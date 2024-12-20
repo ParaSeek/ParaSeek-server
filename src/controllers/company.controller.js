@@ -223,13 +223,18 @@ const getCompany = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Company not found");
   }
 });
-// Controller to get a company's details by its ID
-const getCompanyCreatedByUser = asyncHandler(async (req, res) => {
-  // Find the company by ID and populate related fields
-  const company = await Company.find({ companyOwner: req.user._id })
-    .populate("jobs")
-    .populate("employers.user")
-    .populate("companyOwner");
+
+const getMyCompany = asyncHandler(async (req, res) => {
+  // Find the company by company owner or employers
+  const company = await Company.find({
+    $or: [
+        { companyOwner: req.user._id },
+        { employers: { $elemMatch: { user: req.user._id, hireProcess: "hired" } } }
+    ]
+})
+.populate("jobs")
+.populate("employers.user")
+.populate("companyOwner");
 
   if (company) {
     return res.status(200).json(new ApiResponse(200, company, "success"));
@@ -361,7 +366,7 @@ export {
   fireEmployer,
   createCompany,
   getAllCompany,
-  getCompanyCreatedByUser,
+  getMyCompany,
   follow,
   deleteCompany,
 };

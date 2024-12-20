@@ -7,13 +7,13 @@ import {
   follow,
   getAllCompany,
   getCompany,
-  getCompanyCreatedByUser,
   hireEmployer,
   updateInfoCompany,
   uploadLogo,
   deleteCompany,
   employerResponse,
   fireEmployer,
+  getMyCompany,
 } from "../controllers/company.controller.js";
 
 const companyRouter = express.Router();
@@ -36,9 +36,9 @@ companyRouter.get("/get-company", getCompany);
 companyRouter.get("/get-all-company", getAllCompany);
 companyRouter.post("/follow", verifyJWT, follow);
 companyRouter.get(
-  "/get-company-created-by-user",
+  "/get-my-companies",
   verifyJWT,
-  getCompanyCreatedByUser
+  getMyCompany
 );
 companyRouter.patch(
   "/update-company-info/:companyId",
