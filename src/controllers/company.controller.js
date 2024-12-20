@@ -4,7 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { v2 as cloudinary } from "cloudinary";
 import { uploadOnCloudinary } from "../services/cloudinary.js";
 import Company from "../models/company.model.js";
-import {User} from "../models/user.model.js"
+import { User } from "../models/user.model.js"
 
 // Controller to create a new company
 const createCompany = asyncHandler(async (req, res) => {
@@ -114,7 +114,7 @@ const getCompany = asyncHandler(async (req, res) => {
 // Controller to get a company's details by its ID
 const getCompanyCreatedByUser = asyncHandler(async (req, res) => {
   // Find the company by ID and populate related fields
-  const company = await Company.find({ companyOwner: req.user._id});
+  const company = await Company.find({ companyOwner: req.user._id });
 
   if (company) {
     return res.status(200).json(new ApiResponse(200, company, "success"));
@@ -135,7 +135,7 @@ const getAllCompany = asyncHandler(async (req, res) => {
 
 // Controller to update a company's information
 const updateInfoCompany = asyncHandler(async (req, res) => {
-  const companyId = req.params.id;
+  const { companyId } = req.params;
 
   // Find and update the company
   const company = await Company.findById(companyId);
@@ -156,6 +156,26 @@ const updateInfoCompany = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, updatedCompany, "Company updated successfully"));
+});
+
+const deleteCompany = asyncHandler(async (req, res) => {
+  const { companyId } = req.params;
+
+  // Find and delete the company
+  const company = await Company.findById(companyId);
+  if (!company) {
+    throw new ApiError(404, "Company not found");
+  }
+
+  await User.updateMany(
+    { companies: companyId },
+    { $pull: { companies: companyId } }
+  );
+
+  await company.deleteOne();
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Company Deleted successfully"));
 });
 
 const uploadLogo = asyncHandler(async (req, res) => {
@@ -225,5 +245,6 @@ export {
   createCompany,
   getAllCompany,
   getCompanyCreatedByUser,
-  follow
+  follow,
+  deleteCompany
 };

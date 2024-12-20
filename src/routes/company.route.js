@@ -11,6 +11,7 @@ import {
   hireEmployer,
   updateInfoCompany,
   uploadLogo,
+  deleteCompany
 } from "../controllers/company.controller.js";
 
 const companyRouter = express.Router();
@@ -31,17 +32,23 @@ companyRouter.get(
   getCompanyCreatedByUser
 );
 companyRouter.patch(
-  "/update-company-info",
+  "/update-company-info/:companyId",
   verifyJWT,
   verfiyOwnerShip,
   updateInfoCompany
 );
 companyRouter.post(
-  "/upload-logo",
+  "/upload-logo/:companyId",
   verifyJWT,
   verfiyOwnerShip,
   upload.single("companyLogo"),
   uploadLogo
+);
+companyRouter.delete(
+  "/delete/:companyId",
+  verifyJWT,
+  verfiyOwnerShip,
+  deleteCompany
 );
 
 export default companyRouter;
