@@ -13,6 +13,7 @@ import {
   uploadLogo,
   deleteCompany,
   employerResponse,
+  fireEmployer,
 } from "../controllers/company.controller.js";
 
 const companyRouter = express.Router();
@@ -20,10 +21,16 @@ const companyRouter = express.Router();
 companyRouter.post("/create-company", verifyJWT, createCompany);
 companyRouter.post("/:companyId", verifyJWT, employerResponse);
 companyRouter.patch(
-  "/hire-employers",
+  "/hire-employers/:companyId",
   verifyJWT,
   verfiyOwnerShip,
   hireEmployer
+);
+companyRouter.post(
+  "/fire-employers/:companyId",
+  verifyJWT,
+  verfiyOwnerShip,
+  fireEmployer
 );
 companyRouter.get("/get-company", getCompany);
 companyRouter.get("/get-all-company", getAllCompany);
