@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema(
     lastName: { type: String },
     phoneNumber: { type: Number },
     email: { type: String, required: true, unique: true, lowercase: true },
-    username: { type: String, required: true, unique: true,lowercase:true },
+    username: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String },
     dob: {
       type: Date,
@@ -59,20 +59,20 @@ const userSchema = new mongoose.Schema(
     companies: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref:"Company",
-      }
+        ref: "Company",
+      },
     ],
     resume: { type: String },
-    tokens:{
-      type:Object
+    tokens: {
+      type: Object,
     },
     verifyCode: {
       type: String,
-      default:"",
-    },    
+      default: "",
+    },
     verifyCodeExpiry: {
       type: Date,
-      default:null,
+      default: null,
     },
     resetPasswordToken: String,
     resetPasswordExpiresAt: Date,

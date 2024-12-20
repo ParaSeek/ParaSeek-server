@@ -109,11 +109,23 @@ const employerResponse = asyncHandler(async (req, res) => {
     throw new ApiError(404, "company not exist");
   }
 
-  if (!company.employers.some(employer => employer.user.toString() === userId.toString())) {
-    throw new ApiError(404, "You are not the one who was offered the job or you already rejected the job.");
+  if (
+    !company.employers.some(
+      (employer) => employer.user.toString() === userId.toString()
+    )
+  ) {
+    throw new ApiError(
+      404,
+      "You are not the one who was offered the job or you already rejected the job."
+    );
   }
 
-  if (message === "reject" && company.employers.find((employer) => employer.user.toString() === userId.toString()).hireProcess === "pending") {
+  if (
+    message === "reject" &&
+    company.employers.find(
+      (employer) => employer.user.toString() === userId.toString()
+    ).hireProcess === "pending"
+  ) {
     await Company.updateOne(
       { _id: companyId },
       { $pull: { employers: { user: userId } } }
@@ -124,6 +136,9 @@ const employerResponse = asyncHandler(async (req, res) => {
       { _id: companyId, "employers.user": userId },
       { $set: { "employers.$.hireProcess": "hired" } }
     );
+    const user = await User.findById(userId);
+    user.companies.push(companyId);
+    await user.save();
     return res
       .status(200)
       .json(new ApiResponse(200, company, "Congratulations, You are hired"));
@@ -133,11 +148,10 @@ const employerResponse = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, company, "You are already hired"));
 });
 
-
 //Controller to fire an employee
-const fireEmployer =  asyncHandler(async (req, res) => {
-  const {companyId} = req.params;
-  const {userId} = req.body;
+const fireEmployer = asyncHandler(async (req, res) => {
+  const { companyId } = req.params;
+  const { userId } = req.body;
 
   // Find the company and add the employer if it exists
   const company = await Company.findById(companyId);
@@ -152,20 +166,24 @@ const fireEmployer =  asyncHandler(async (req, res) => {
   const employerIndex = company.employers.findIndex(
     (employer) => String(employer.user) === String(userId)
   );
+  const companiesIndex = user.companies.findIndex(
+    (company) => String(company) === String(companyId)
+  );
 
   if (employerIndex === -1) {
     throw new ApiError(404, "User is not an employer in this company");
   }
 
   company.employers.splice(employerIndex, 1);
+  user.companies.splice(companiesIndex, 1);
 
   await company.save();
+  await user.save();
 
   return res
     .status(200)
     .json(new ApiResponse(200, null, "Employer removed successfully"));
-
-})
+});
 // Controller to hire an employer by adding a user to the employers array
 const follow = asyncHandler(async (req, res) => {
   const { companyId } = req.body;
