@@ -20,7 +20,7 @@ jobRouter.post("/add-questions/:jobId", verifyJWT, addQuestions);
 jobRouter.patch("/job-updated/:job_id", verifyJWT, jobUpdated);
 jobRouter.delete("/job-delete/:job_id", verifyJWT, jobDeleted);
 jobRouter.get("/get-jobs", verifyJWT, getAllJobs);
-jobRouter.get("/get-employer-jobs/:user_id", verifyJWT, getJobsCreatedByUser);
+jobRouter.get("/get-employer-jobs/:userId", verifyJWT, getJobsCreatedByUser);
 jobRouter.patch("/update-status/:job_id", verifyJWT, jobStatusUpdate);
 
 //job router for google drive

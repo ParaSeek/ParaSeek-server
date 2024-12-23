@@ -4,6 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { google } from "googleapis";
 import { User } from "../models/user.model.js";
+import Company from "../models/company.model.js";
 
 // OAuth2 Client Initialization
 const oauth2Client = new google.auth.OAuth2(
@@ -74,6 +75,11 @@ const jobCreated = asyncHandler(async (req, res) => {
   if (user.role === "job_seeker") {
     throw new ApiError(400, "You are not authorized to create a job");
   }
+  const company = await Company.findOne({companyName: companyName});
+  
+  if(!company){
+    throw new ApiError(404, "Company not found");
+  }
   // Validate Required Fields
   if (
     !title ||
@@ -88,7 +94,7 @@ const jobCreated = asyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "Please fill in all the required fields");
   }
-
+  
   // Validate Email Format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(contactEmail)) {
@@ -154,6 +160,9 @@ const jobCreated = asyncHandler(async (req, res) => {
 
   // Save Job Entry and Respond
   const createdJob = await job.save();
+  company.jobs.push(createdJob._id);
+  await company.save();
+
   return res
     .status(201)
     .json(new ApiResponse(201, createdJob, "Job posted successfully"));
