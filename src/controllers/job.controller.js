@@ -64,6 +64,11 @@ const jobCreated = asyncHandler(async (req, res) => {
     contactEmail,
     benefits,
     workHours,
+    requiredEducation,
+    requiredLanguages,
+    numberOfOpenings,
+    applicationLink,
+    applicationInstructions,
   } = req.body;
   const user = await User.findById(req.user._id);
   if (user.role === "job_seeker") {
@@ -140,10 +145,15 @@ const jobCreated = asyncHandler(async (req, res) => {
     contactEmail,
     benefits,
     workHours,
+    requiredEducation,
+    requiredLanguages,
+    numberOfOpenings,
+    applicationLink,
+    applicationInstructions,
   });
 
   // Save Job Entry and Respond
-  const createdJob = await job.save().select("-googleDriveFolderId");
+  const createdJob = await job.save();
   return res
     .status(201)
     .json(new ApiResponse(201, createdJob, "Job posted successfully"));

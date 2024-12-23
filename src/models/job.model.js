@@ -19,7 +19,7 @@ const jobSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     description: { type: String, required: true },
-    companyName: { type: String, required: true, unique: true },
+    companyName: { type: String, required: true },
     location: {
       city: { type: String },
       state: { type: String },
@@ -34,7 +34,7 @@ const jobSchema = new mongoose.Schema(
     },
     experienceLevel: {
       type: String,
-      enum: ["Entry Level", "Mid Level", "Senior Level"],
+      enum: ["fresher", "beginner", "intermediate" , "senior", "expert"],
     },
     jobType: { type: String, required: true }, // e.g., Technical, Marketing
     skills: [String],

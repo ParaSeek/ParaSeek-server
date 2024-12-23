@@ -96,7 +96,7 @@ const hireEmployer = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, {}, "successfully sent the offer letter"));
+    .json(new ApiResponse(200, {}, "successfully sent the offer letter via Email"));
 });
 
 const employerResponse = asyncHandler(async (req, res) => {
