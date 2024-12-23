@@ -353,9 +353,8 @@ const getAllJobs = asyncHandler(async (req, res) => {
 
 // Get all jobs created by a specific user
 const getJobsCreatedByUser = asyncHandler(async (req, res) => {
-  const { userId } = req.params; // Extract user ID from URL params
+  const { userId } = req.params;
 
-  // Extract query parameters for filtering, sorting, and pagination
   const {
     keyword,
     location,
@@ -367,15 +366,15 @@ const getJobsCreatedByUser = asyncHandler(async (req, res) => {
     order = "desc",
   } = req.query;
 
-  // Initialize a query object for filters, including filtering by the user who created the job
+  // Initialize query
   let query = { postedBy: userId };
 
-  // Add additional filters based on query parameters
+  // Add filters
   if (keyword) {
-    query.title = { $regex: keyword, $options: "i" }; // Case-insensitive search on title
+    query.title = { $regex: keyword, $options: "i" };
   }
   if (location) {
-    query.location = { $regex: location, $options: "i" }; // Case-insensitive search on location
+    query["location.city"] = { $regex: location, $options: "i" }; // Adjusted for nested location object
   }
   if (jobType) {
     query.jobType = jobType;
@@ -386,22 +385,27 @@ const getJobsCreatedByUser = asyncHandler(async (req, res) => {
 
   // Pagination
   const skip = (page - 1) * limit;
-
-  // Sort order
   const sortOrder = order === "asc" ? 1 : -1;
 
-  // Retrieve jobs from the database with filters, pagination, and sorting
-  const jobs = await Job.find(query)
-    .sort({ [sortBy]: sortOrder }) // Sorting
-    .skip(skip) // Pagination: skip the first (page-1) * limit items
-    .limit(Number(limit)); // Limit the number of jobs returned
+  console.log("Query:", query);
 
-  // Return the jobs and total job count
+  // Fetch jobs
+  const jobs = await Job.find(query)
+    .sort({ [sortBy]: sortOrder })
+    .skip(skip)
+    .limit(Number(limit));
+
+  console.log("Jobs:", jobs);
+
+  if (!jobs.length) {
+    return res
+      .status(404)
+      .json(new ApiResponse(404, [], "No jobs found for this user."));
+  }
+
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, jobs, "Jobs created by user retrieved successfully")
-    );
+    .json(new ApiResponse(200, jobs, "Jobs created by user retrieved successfully"));
 });
 
 //Update the status
