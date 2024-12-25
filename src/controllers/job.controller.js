@@ -18,7 +18,7 @@ const getAuthUrl = () =>
   oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: ["https://www.googleapis.com/auth/drive.file"],
-});
+  });
 
 //2. Employer Authorization Controller
 const authorizeEmployer = asyncHandler(async (req, res) => {
@@ -75,9 +75,9 @@ const jobCreated = asyncHandler(async (req, res) => {
   if (user.role === "job_seeker") {
     throw new ApiError(400, "You are not authorized to create a job");
   }
-  const company = await Company.findOne({companyName: companyName});
-  
-  if(!company){
+  const company = await Company.findOne({ companyName: companyName });
+
+  if (!company) {
     throw new ApiError(404, "Company not found");
   }
   // Validate Required Fields
@@ -94,7 +94,7 @@ const jobCreated = asyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "Please fill in all the required fields");
   }
-  
+
   // Validate Email Format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(contactEmail)) {
@@ -178,7 +178,7 @@ const addQuestions = asyncHandler(async (req, res) => {
 
   const job = await Job.findById(jobId);
 
-  if(job.postedBy.toString() !== req.user._id.toString()){
+  if (job.postedBy.toString() !== req.user._id.toString()) {
     throw new ApiError(404, "You are not the owner of the job");
   }
   let jobQuestionDoc = await JobQuestion.findOne(jobId);
@@ -294,6 +294,7 @@ const jobDeleted = asyncHandler(async (req, res) => {
   }
   const user = await User.findById(req.user._id);
 
+
   if (!user) {
     throw new ApiError(404, "User not exist");
   }
@@ -302,12 +303,19 @@ const jobDeleted = asyncHandler(async (req, res) => {
     throw new ApiError(404, "You are not authorized to delete the job");
   }
 
-  if (user.id.toString() !== job.postedBy.toString()) {
-    throw new ApiError(404, "You are not authorized to deleted it");
-  }
+  // if (user.id.toString() !== job.postedBy.toString()) {
+  //   throw new ApiError(404, "You are not authorized to deleted it");
+  // }
+
   // Find the job by ID
   const job = await Job.findByIdAndDelete(job_id);
+  const company = await Company.findOne({ companyName: job.companyName });
+  if (!company) {
+    throw new ApiError(404, "Company not found");
+  }
 
+  company.jobs = company.jobs.filter((job) => job.toString() !== job_id);
+  company.save();
   return res
     .status(200)
     .json(new ApiResponse(200, {}, "Job successfully deleted"));
