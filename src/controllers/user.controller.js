@@ -6,7 +6,6 @@ import { v2 as cloudinary } from "cloudinary";
 import { uploadOnCloudinary } from "../services/cloudinary.js";
 import getUser from "../helper/getUser.js";
 
-
 // Get the all data of the user
 const getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select(
@@ -111,10 +110,13 @@ const updateProfile = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, await getUser(user._id), "User profile updated successfully.")
+      new ApiResponse(
+        200,
+        await getUser(user._id),
+        "User profile updated successfully."
+      )
     );
 });
-
 
 // updating the avatar here
 const updateUserAvatar = asyncHandler(async (req, res) => {
@@ -151,8 +153,8 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     }
   } else {
     const uploadedAvatar = await uploadOnCloudinary(avatarLocalPath);
-    if(!uploadedAvatar){
-      throw new ApiError(500,"Internal server error while uploading image");
+    if (!uploadedAvatar) {
+      throw new ApiError(500, "Internal server error while uploading image");
     }
     await User.findByIdAndUpdate(
       req.user?._id,
@@ -168,9 +170,14 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, await getUser(user._id), "Avatar updated successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        await getUser(user._id),
+        "Avatar updated successfully"
+      )
+    );
 });
-
 
 // Updating the resume here
 const updateResume = asyncHandler(async (req, res) => {
@@ -192,7 +199,7 @@ const updateResume = asyncHandler(async (req, res) => {
     const publicId = user.resume.split("/").pop().split(".")[0]; // Extract Cloudinary public ID
     try {
       await cloudinary.uploader.destroy(publicId); // Delete old avatar
-      const uploadedResume = await uploadOnCloudinary(resumeLocalPath,"raw");
+      const uploadedResume = await uploadOnCloudinary(resumeLocalPath, "raw");
       await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -207,7 +214,7 @@ const updateResume = asyncHandler(async (req, res) => {
     }
   } else {
     const uploadedResume = await uploadOnCloudinary(resumeLocalPath);
-    
+
     await User.findByIdAndUpdate(
       req.user?._id,
       {
@@ -221,7 +228,13 @@ const updateResume = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, await getUser(user._id), "Resume updated successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        await getUser(user._id),
+        "Resume updated successfully"
+      )
+    );
 });
 
 // Updating the password here
@@ -256,8 +269,38 @@ const updatePassword = asyncHandler(async (req, res) => {
   // Respond with a success message
   res
     .status(200)
-    .json(new ApiResponse(200, await getUser(user._id), "Password updated successfully."));
+    .json(
+      new ApiResponse(
+        200,
+        await getUser(user._id),
+        "Password updated successfully."
+      )
+    );
 });
 
+// progress bar
+const progressBar = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
 
-export { updateProfile, updateUserAvatar, updateResume, updatePassword, getMe };
+  const user = await User.findById(userId);
+
+  let score = 0;
+
+  if (user.firstName && user.lastName) score += 10; // 10%
+  if (user.phoneNumber) score += 10; // 10%
+  if (user.dob) score += 10; // 10%
+  if (user.gender) score += 10; // 10%
+
+  const hasLocation =
+    user.location && Object.values(user.location).every((field) => field);
+  if (hasLocation) score += 15; // 15%
+
+  if (user.profilePic) score += 10; // 10%
+  if (user.resume) score += 10; // 10%
+  if (user.jobPreferences) score += 10; // 10%
+  if (user.qualification) score += 15; // 15%
+
+  return res.status(200).json(new ApiResponse(200, score, "Your progreass"))
+});
+
+export { updateProfile, updateUserAvatar, updateResume, updatePassword, getMe,progressBar };

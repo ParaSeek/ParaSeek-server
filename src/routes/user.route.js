@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getMe,
+  progressBar,
   updatePassword,
   updateProfile,
   updateResume,
@@ -12,6 +13,7 @@ import { upload } from "../middlewares/multer.middleware.js";
 const userRouter = express.Router();
 
 userRouter.get("/me", verifyJWT, getMe);
+userRouter.get("/progress-bar", verifyJWT, progressBar);
 userRouter.post("/update-profile", verifyJWT, updateProfile);
 userRouter.post("/update-password", verifyJWT, updatePassword);
 userRouter.post(
