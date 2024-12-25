@@ -78,13 +78,27 @@ const applyForJob = asyncHandler(async (req, res) => {
     });
 
     // Create an application record
-    await Application.create({
+    const application = await Application.create({
       job: job_id,
       applicant: _id,
       status: "applied",
       appliedAt: Date.now(),
     });
 
+
+    const data = {
+      user: { name: user.firstName + user.lastName },
+      jobTitle: job.title,
+      companyName: job.companyName,
+      applicationId : application._id,
+    };
+  
+    await sendMail({
+      email: user.email,
+      subject: "Job Apply",
+      template: "job-apply.ejs",
+      data,
+    });
     res
       .status(201)
       .json(
@@ -99,7 +113,6 @@ const applyForJob = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Failed to upload files to Google Drive");
   } finally {
     fs.unlinkSync(resumePath);
-    // fs.unlinkSync(job_questionsPath);
   }
 });
 
@@ -117,6 +130,7 @@ const getApplicantes = asyncHandler(async (req, res) => {
     throw new ApiError(404, "No applicants found for this job.");
   }
 
+  
   res
     .status(200)
     .json(

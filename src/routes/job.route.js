@@ -9,6 +9,7 @@ import {
   jobDeleted,
   jobStatusUpdate,
   jobUpdated,
+  recommededJobs,
 } from "../controllers/job.controller.js";
 import verifyJWT from "../middlewares/auth.middleware.js";
 import verfiyEmployer from "../middlewares/verifyEmployer.middleware.js";
@@ -26,5 +27,8 @@ jobRouter.patch("/update-status/:job_id", verifyJWT, jobStatusUpdate);
 //job router for google drive
 jobRouter.get("/drive-verification", verifyJWT, authorizeEmployer); // return the drive link to login
 jobRouter.get("/drive-code", verifyJWT, drive_verify); // return the drive link to login
+
+//recommendation
+jobRouter.get("/recommendations", verifyJWT, recommededJobs);
 
 export { jobRouter };

@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { google } from "googleapis";
 import { User } from "../models/user.model.js";
 import Company from "../models/company.model.js";
+import tf from "@tensorflow/tfjs-node";
 
 // OAuth2 Client Initialization
 const oauth2Client = new google.auth.OAuth2(
@@ -294,7 +295,6 @@ const jobDeleted = asyncHandler(async (req, res) => {
   }
   const user = await User.findById(req.user._id);
 
-
   if (!user) {
     throw new ApiError(404, "User not exist");
   }
@@ -422,7 +422,9 @@ const getJobsCreatedByUser = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, jobs, "Jobs created by user retrieved successfully"));
+    .json(
+      new ApiResponse(200, jobs, "Jobs created by user retrieved successfully")
+    );
 });
 
 //Update the status
@@ -466,6 +468,58 @@ const jobStatusUpdate = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updatedJob, "update the statue of the job"));
 });
 
+const recommededJobs = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const user = await User.findById(userId)
+    .populate("jobPreferences")
+    .populate("qualification");
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const jobs = await Job.find({ isActive: true });
+
+  if (!jobs || jobs.length === 0) {
+    throw new ApiError(404, "No jobs available for recommendation");
+  }
+
+  const { jobPreferences, qualification } = user;
+
+  const userSkills = qualification?.skills || [];
+  const userJobTitles = jobPreferences?.jobTitles || [];
+  const userJobTypes = jobPreferences?.jobTypes || [];
+  const userRemotePreference = jobPreferences?.remote || false;
+
+  const recommendedJobs = jobs.map((job) => {
+    const skillMatchCount = job.skills.filter((skill) =>
+      userSkills.includes(skill)
+    ).length;
+    const jobTypeMatch = userJobTypes.includes(job.jobType) ? 1 : 0;
+    const remotePreferenceMatch =
+      userRemotePreference === job.remote ? 1 : 0;
+
+    // Calculate a weighted score based on matching criteria
+    const score =
+      skillMatchCount * 2 + // Weight skills more heavily
+      jobTypeMatch * 1.5 + // Moderate weight for job type
+      remotePreferenceMatch * 1; // Least weight for remote preference
+
+    return { job, score };
+  });
+
+  recommendedJobs.sort((a, b) => b.score - a.score);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      recommendedJobs,
+      "Recommended jobs fetched successfully"
+    )
+  );
+});
+
 export {
   jobCreated,
   jobUpdated,
@@ -475,5 +529,6 @@ export {
   jobStatusUpdate,
   authorizeEmployer,
   drive_verify,
-  addQuestions
+  addQuestions,
+  recommededJobs
 };
