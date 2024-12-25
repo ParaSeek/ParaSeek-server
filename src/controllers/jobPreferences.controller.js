@@ -9,7 +9,7 @@ const createOrUpdateJobPreferences = asyncHandler(async (req, res) => {
     req.body;
 
   // Custom validation
-  if (!jobTitles && !jobTypes && !workSchedule && !minimumBasePay && !remote) {
+  if (!jobTitles && !jobTypes && !workSchedule && !minimumBasePay) {
     throw new ApiError(400, "Nothing to be added or updated.");
   }
 
@@ -34,7 +34,7 @@ const createOrUpdateJobPreferences = asyncHandler(async (req, res) => {
     preferences.jobTypes = jobTypes || preferences.jobTypes;
     preferences.workSchedule = workSchedule || preferences.workSchedule;
     preferences.minimumBasePay = minimumBasePay || preferences.minimumBasePay;
-    preferences.remote = remote || preferences.remote;
+    preferences.remote = remote;
 
     const updatedPreferences = await preferences.save();
 

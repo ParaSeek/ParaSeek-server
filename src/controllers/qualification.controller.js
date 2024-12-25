@@ -21,9 +21,9 @@ const createAndUpdateQualification = asyncHandler(async (req, res) => {
   }
 
   // Check if user already has a qualification object
-  if (user.education) {
+  if (user.qualification) {
     // Update the existing qualification
-    const qualification = await Qualification.findById(user.education);
+    const qualification = await Qualification.findById(user.qualification);
 
     if (!qualification) {
       throw new ApiError(404, "Qualification not found.");

@@ -11,7 +11,7 @@ const jobPreferences = new mongoose.Schema({
     amount: Number,
     payPeriod: String,
   },
-  remote: [{ type: String }],
+  remote: { type: Boolean, default: false },
 });
 
 const Preferences = mongoose.model("Preferences", jobPreferences);

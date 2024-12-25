@@ -286,19 +286,19 @@ const progressBar = asyncHandler(async (req, res) => {
 
   let score = 0;
 
-  if (user.firstName && user.lastName) score += 10; // 10%
-  if (user.phoneNumber) score += 10; // 10%
-  if (user.dob) score += 10; // 10%
-  if (user.gender) score += 10; // 10%
+  if (user.firstName && user.lastName) score += 5; 
+  if (user.phoneNumber) score += 3; 
+  if (user.dob) score += 2; 
+  if (user.gender) score += 5; 
 
   const hasLocation =
     user.location && Object.values(user.location).every((field) => field);
-  if (hasLocation) score += 15; // 15%
+  if (hasLocation) score += 10; 
 
-  if (user.profilePic) score += 10; // 10%
-  if (user.resume) score += 10; // 10%
-  if (user.jobPreferences) score += 10; // 10%
-  if (user.qualification) score += 15; // 15%
+  if (user.profilePic) score += 5; 
+  if (user.resume) score += 15; 
+  if (user.jobPreferences) score += 20; 
+  if (user.qualification) score += 20; 
 
   return res.status(200).json(new ApiResponse(200, score, "Your progreass"))
 });

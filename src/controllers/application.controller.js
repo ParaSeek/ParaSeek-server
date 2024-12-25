@@ -6,22 +6,29 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Job } from "../models/job.model.js";
 import { Application } from "../models/application.model.js";
+import { User } from "../models/user.model.js";
 
 const applyForJob = asyncHandler(async (req, res) => {
   const { job_id } = req.params;
-  const { email, tokens, _id: userId } = req.user;
+  const job = await Job.findById(job_id);
+  if (!job) throw new ApiError(404, "Job not found");
+
+  const userId = job.postedBy;
+  if (userId.toString() === req.user._id.toString()) throw new ApiError(400, "You cannot apply for your own job");
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
+
+  const { tokens } = user;
+  const { username, _id } = req.user;
 
   if (!job_id) throw new ApiError(400, "Job ID is required");
 
-  const job = await Job.findById(job_id);
-  if (!job) throw new ApiError(404, "Job not found");
 
   const { googleDriveFolderId } = job;
   if (!googleDriveFolderId) throw new ApiError(500, "Google Drive folder ID is missing for this job");
 
-  const emailUsername = email.split("@")[0];
   const resumePath = req.files?.resume[0]?.path;
-  const job_questionsPath = req.files.job_questions[0].path;
+  // const job_questionsPath = req.files.job_questions[0].path;
 
   if (!fs.existsSync(resumePath)) throw new ApiError(400, "Resume file not found");
 
@@ -37,13 +44,13 @@ const applyForJob = asyncHandler(async (req, res) => {
   try {
     const existingApplication = await Application.findOne({
       job: job_id,
-      applicant: userId,
+      applicant: _id,
     });
     if (existingApplication) throw new ApiError(400, "You have already applied for this job");
 
     // Create a folder for this applicant's files
     const folderMetadata = {
-      name: emailUsername,
+      name: username,
       mimeType: "application/vnd.google-apps.folder",
       parents: [googleDriveFolderId],
     };
@@ -66,21 +73,21 @@ const applyForJob = asyncHandler(async (req, res) => {
     });
 
     // Upload Job Questions file
-    const questionsMetadata = { name: "Question.pdf", parents: [applicantFolderId] };
-    const questionsMedia = {
-      mimeType: "application/pdf",
-      body: fs.createReadStream(job_questionsPath),
-    };
-    await drive.files.create({
-      resource: questionsMetadata,
-      media: questionsMedia,
-      fields: "id",
-    });
+    // const questionsMetadata = { name: "Question.pdf", parents: [applicantFolderId] };
+    // const questionsMedia = {
+    //   mimeType: "application/pdf",
+    //   body: fs.createReadStream(job_questionsPath),
+    // };
+    // await drive.files.create({
+    //   resource: questionsMetadata,
+    //   media: questionsMedia,
+    //   fields: "id",
+    // });
 
     // Create an application record
     await Application.create({
       job: job_id,
-      applicant: userId,
+      applicant: _id,
       status: "applied",
       appliedAt: Date.now(),
     });
@@ -93,7 +100,7 @@ const applyForJob = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Failed to upload files to Google Drive");
   } finally {
     fs.unlinkSync(resumePath);
-    fs.unlinkSync(job_questionsPath);
+    // fs.unlinkSync(job_questionsPath);
   }
 });
 
