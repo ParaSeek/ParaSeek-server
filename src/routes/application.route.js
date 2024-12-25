@@ -1,6 +1,10 @@
 import express from "express";
 import verifyJWT from "../middlewares/auth.middleware.js";
-import { applyForJob } from "../controllers/application.controller.js";
+import {
+  applyForJob,
+  getAllAppliedJobs,
+  getApplicantes,
+} from "../controllers/application.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 const applicationRouter = express.Router();
@@ -20,5 +24,6 @@ applicationRouter.post(
   ]),
   applyForJob
 );
-
+applicationRouter.get("/getApplicantes/:jobId", verifyJWT, getApplicantes);
+applicationRouter.get("/getAllAppliedJobs", verifyJWT, getAllAppliedJobs);
 export { applicationRouter };

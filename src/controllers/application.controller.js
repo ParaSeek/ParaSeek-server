@@ -14,7 +14,8 @@ const applyForJob = asyncHandler(async (req, res) => {
   if (!job) throw new ApiError(404, "Job not found");
 
   const userId = job.postedBy;
-  if (userId.toString() === req.user._id.toString()) throw new ApiError(400, "You cannot apply for your own job");
+  if (userId.toString() === req.user._id.toString())
+    throw new ApiError(400, "You cannot apply for your own job");
   const user = await User.findById(userId);
   if (!user) throw new ApiError(404, "User not found");
 
@@ -23,14 +24,15 @@ const applyForJob = asyncHandler(async (req, res) => {
 
   if (!job_id) throw new ApiError(400, "Job ID is required");
 
-
   const { googleDriveFolderId } = job;
-  if (!googleDriveFolderId) throw new ApiError(500, "Google Drive folder ID is missing for this job");
+  if (!googleDriveFolderId)
+    throw new ApiError(500, "Google Drive folder ID is missing for this job");
 
   const resumePath = req.files?.resume[0]?.path;
   // const job_questionsPath = req.files.job_questions[0].path;
 
-  if (!fs.existsSync(resumePath)) throw new ApiError(400, "Resume file not found");
+  if (!fs.existsSync(resumePath))
+    throw new ApiError(400, "Resume file not found");
 
   const oauth2Client = new google.auth.OAuth2(
     process.env.CLIENT_ID,
@@ -46,7 +48,8 @@ const applyForJob = asyncHandler(async (req, res) => {
       job: job_id,
       applicant: _id,
     });
-    if (existingApplication) throw new ApiError(400, "You have already applied for this job");
+    if (existingApplication)
+      throw new ApiError(400, "You have already applied for this job");
 
     // Create a folder for this applicant's files
     const folderMetadata = {
@@ -55,7 +58,9 @@ const applyForJob = asyncHandler(async (req, res) => {
       parents: [googleDriveFolderId],
     };
 
-    const { data: { id: applicantFolderId } } = await drive.files.create({
+    const {
+      data: { id: applicantFolderId },
+    } = await drive.files.create({
       resource: folderMetadata,
       fields: "id",
     });
@@ -72,18 +77,6 @@ const applyForJob = asyncHandler(async (req, res) => {
       fields: "id",
     });
 
-    // Upload Job Questions file
-    // const questionsMetadata = { name: "Question.pdf", parents: [applicantFolderId] };
-    // const questionsMedia = {
-    //   mimeType: "application/pdf",
-    //   body: fs.createReadStream(job_questionsPath),
-    // };
-    // await drive.files.create({
-    //   resource: questionsMetadata,
-    //   media: questionsMedia,
-    //   fields: "id",
-    // });
-
     // Create an application record
     await Application.create({
       job: job_id,
@@ -92,9 +85,15 @@ const applyForJob = asyncHandler(async (req, res) => {
       appliedAt: Date.now(),
     });
 
-    res.status(201).json(
-      new ApiResponse(201, {}, "Resume and job questions uploaded successfully")
-    );
+    res
+      .status(201)
+      .json(
+        new ApiResponse(
+          201,
+          {},
+          "Resume and job questions uploaded successfully"
+        )
+      );
   } catch (error) {
     console.error(error);
     throw new ApiError(500, "Failed to upload files to Google Drive");
@@ -104,4 +103,51 @@ const applyForJob = asyncHandler(async (req, res) => {
   }
 });
 
-export { applyForJob };
+const getApplicantes = asyncHandler(async (req, res) => {
+  const { jobId } = req.params;
+
+  if (!jobId) {
+    throw new ApiError(400, "job id undefined");
+  }
+  const applicants = await Application.find({ job: jobId }).populate(
+    "applicant"
+  );
+
+  if (!applicants || applicants.length === 0) {
+    throw new ApiError(404, "No applicants found for this job.");
+  }
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        201,
+        applicants,
+        "Resume and job questions uploaded successfully"
+      )
+    );
+});
+
+const getAllAppliedJobs = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  if (!userId) {
+    throw new ApiError(400, "userId id undefined");
+  }
+  const appliedJobs = await Application.find({ applicant: userId }).populate(
+    "job"
+  );
+  if (!appliedJobs || appliedJobs.length === 0) {
+    throw new ApiError(400, "You not applied yet");
+  }
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        201,
+        applicants,
+        "Resume and job questions uploaded successfully"
+      )
+    );
+});
+export { applyForJob, getApplicantes,getAllAppliedJobs };
