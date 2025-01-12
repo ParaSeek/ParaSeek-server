@@ -18,7 +18,6 @@ const getMe = asyncHandler(async (req, res) => {
 
   // Validate user role and modify the response accordingly
   let responseData;
-  console.log("keunal");
 
   if (user.role === "job_seeker") {
     // Job Seeker: don't include jobsPosted

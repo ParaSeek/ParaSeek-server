@@ -5,6 +5,10 @@ const qualificationSchema = new mongoose.Schema({
     {
       levelOfEducation: String,
       fieldOfStudy: String,
+      boardOrUniversity: String, //newly added
+      institute: String, //newly added
+      fromYear: String, //newly added
+      toYear: String,
     },
   ],
   skills: [{ type: String }],
@@ -20,6 +24,7 @@ const qualificationSchema = new mongoose.Schema({
       jobTitle: String,
       companyName: String,
       certificate: String,
+      description: String
     },
   ],
 });

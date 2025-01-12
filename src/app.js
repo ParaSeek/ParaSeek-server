@@ -12,6 +12,7 @@ import { jobRouter } from "./routes/job.route.js";
 import { applicationRouter } from "./routes/application.route.js";
 import { adminRouter } from "./routes/admin.route.js";
 import companyRouter from "./routes/company.route.js";
+import resumeDraftRouter from "./routes/resumeDraft.route.js";
 dotenv.config();
 const app = express();
 
@@ -41,6 +42,7 @@ app.use("/api/v1/job", jobRouter);
 app.use("/api/v1/application", applicationRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/company", companyRouter);
+app.use("/api/v1/draft", resumeDraftRouter);
 
 // unknown route
 app.all("*", (req, res, next) => {
