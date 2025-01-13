@@ -7,8 +7,8 @@ const qualificationSchema = new mongoose.Schema({
       fieldOfStudy: String,
       boardOrUniversity: String, //newly added
       institute: String, //newly added
-      fromYear: String, //newly added
-      toYear: String,
+      from: String, //newly added
+      to: String,
     },
   ],
   skills: [{ type: String }],
@@ -27,6 +27,14 @@ const qualificationSchema = new mongoose.Schema({
       description: String,
       from: String,
       to: String,
+    },
+  ],
+  projects: [
+    {
+      title: String,
+      overview: String,
+      role: String,
+      link: String,
     },
   ],
 });
