@@ -12,16 +12,21 @@ const resumeDraftSchema = new mongoose.Schema({
     min: [1000000000, "Phone number must be at least 10 digits"],
     max: [9999999999, "Phone number must be at most 10 digits"],
   },
+  address: {
+    type: String,
+  },
+  gender: {
+    type: String,
+  },
+  dob: {
+    type: String,
+  },
   links: [
     {
       title: String,
       url: String,
     },
   ],
-  qualification: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Qualification",
-  },
   nationality: {
     type: String,
   },

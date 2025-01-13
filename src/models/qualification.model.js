@@ -24,7 +24,9 @@ const qualificationSchema = new mongoose.Schema({
       jobTitle: String,
       companyName: String,
       certificate: String,
-      description: String
+      description: String,
+      from: String,
+      to: String,
     },
   ],
 });

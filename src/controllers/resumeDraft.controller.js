@@ -12,7 +12,7 @@ const getResumeDraft = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Email is required to fetch the draft.");
   }
 
-  const resumeDraft = await ResumeDraft.findOne({ email }).populate("qualification");
+  const resumeDraft = await ResumeDraft.findOne({ email });
 
   if (!resumeDraft) {
     throw new ApiError(404, "No draft found for the provided email.");
@@ -24,14 +24,16 @@ const getResumeDraft = asyncHandler(async (req, res) => {
 });
 
 // Controller to save or update the resume draft
-const saveDraft = asyncHandler(async (req, res) => {
+const saveResumeDraft = asyncHandler(async (req, res) => {
   const {
     email,
     name,
     phone,
+    address,
+    gender,
+    dob,
     links,
     nationality,
-    qualification,
     professionalOverview,
     declaration,
     hobbies,
@@ -55,9 +57,11 @@ const saveDraft = asyncHandler(async (req, res) => {
     // Update existing draft
     resumeDraft.name = name ?? resumeDraft.name;
     resumeDraft.phone = phone ?? resumeDraft.phone;
+    resumeDraft.address = address ?? resumeDraft.address;
+    resumeDraft.gender = gender ?? resumeDraft.gender;
+    resumeDraft.dob = dob ?? resumeDraft.dob;
     resumeDraft.links = links ?? resumeDraft.links;
     resumeDraft.nationality = nationality ?? resumeDraft.nationality;
-    resumeDraft.qualification = qualification ?? resumeDraft.qualification;
     resumeDraft.professionalOverview =
       professionalOverview ?? resumeDraft.professionalOverview;
     resumeDraft.declaration = declaration ?? resumeDraft.declaration;
@@ -76,8 +80,10 @@ const saveDraft = asyncHandler(async (req, res) => {
       email,
       name,
       phone,
+      address,
+      gender,
+      dob,
       links,
-      qualification: qualification ?? user.qualification,
       nationality,
       professionalOverview,
       declaration,
@@ -92,4 +98,4 @@ const saveDraft = asyncHandler(async (req, res) => {
   }
 });
 
-export { getResumeDraft, saveDraft };
+export { getResumeDraft, saveResumeDraft };
