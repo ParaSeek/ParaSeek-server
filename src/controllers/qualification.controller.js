@@ -6,7 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // creating and updating the qualification
 const createAndUpdateQualification = asyncHandler(async (req, res) => {
-  const { education, skills, certifications, languages, experience } = req.body;
+  const { education, skills, certifications, languages, experience, projects } = req.body;
 
   // Custom validation
   if (!education && !skills && !certifications && !languages && !experience) {
@@ -36,6 +36,7 @@ const createAndUpdateQualification = asyncHandler(async (req, res) => {
       certifications || qualification.certifications;
     qualification.languages = languages || qualification.languages;
     qualification.experience = experience || qualification.experience;
+    qualification.projects = projects || qualification.projects;
 
     const updatedQualification = await qualification.save();
 
@@ -60,6 +61,7 @@ const createAndUpdateQualification = asyncHandler(async (req, res) => {
       certifications,
       languages,
       experience,
+      projects
     });
 
     const savedQualification = await newQualification.save();
