@@ -98,8 +98,8 @@ const register = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("activation_token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "strict",
+      secure: true,
+      sameSite: "none",
       maxAge: 60 * 60 * 1000,
     })
     .json(new ApiResponse(200, {}, "Verification code send Successfully"));
@@ -204,12 +204,14 @@ const login = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: true, // Set to `true` in production for HTTPS
     maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days in milliseconds
+    sameSite: "none"
   };
 
   const refreshTokenOptions = {
     httpOnly: true,
     secure: true, // Set to `true` in production for HTTPS
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    sameSite: "none"
   };
 
   const data = {
@@ -230,6 +232,7 @@ const logout = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: false,
     secure: false,
+    sameSite: "none",
   };
 
   return res
@@ -333,6 +336,6 @@ const resetPassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Password reset successfully"));
 });
 
-export { register, login, logout, socialAuth,forgotPassword,resetPassword };
+export { register, login, logout, socialAuth, forgotPassword, resetPassword };
 
 
