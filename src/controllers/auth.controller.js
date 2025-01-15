@@ -230,8 +230,8 @@ const login = asyncHandler(async (req, res) => {
 // Logout the user
 const logout = asyncHandler(async (req, res) => {
   const options = {
-    httpOnly: false,
-    secure: false,
+    httpOnly: true,
+    secure: true,
     sameSite: "none",
   };
 
@@ -244,36 +244,52 @@ const logout = asyncHandler(async (req, res) => {
 
 // Social Auth for user
 const socialAuth = asyncHandler(async (req, res) => {
-  const { email, name } = req.body;
-  const user = await userModel.findOne({ email });
+  const { email, name, profilePic } = req.body;
+  console.log(email, name, profilePic);
 
-  const options = {
-    httpOnly: false,
-    secure: false,
+  const user = await User.findOne({ email });
+  console.log(user);
+
+  const index = name.indexOf(' ');
+  const firstName = name.substring(0, index);
+  const lastName = name.substring(index + 1);
+  const username = email.substring(0, email.indexOf('@'));
+  const accessTokenOptions = {
+    httpOnly: true,
+    secure: true, // Set to `true` in production for HTTPS
+    maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days in milliseconds
+    sameSite: "none"
+  };
+  const refreshTokenOptions = {
+    httpOnly: true,
+    secure: true, // Set to `true` in production for HTTPS
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    sameSite: "none"
   };
 
+
   if (!user) {
-    const newUser = await userModel.create({ email, name });
+    const newUser = await User.create({ email, isVerified: true, username, firstName, lastName, profilePic });
     const { refreshToken, accessToken } = generateAccessAndRefereshTokens(
       newUser._id
     );
     return res
       .status(200)
-      .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", refreshToken, options)
-      .json(new ApiResponse(200, loggedInUser, "User logged In Successfully"));
+      .cookie("accessToken", accessToken, accessTokenOptions)
+      .cookie("refreshToken", refreshToken, refreshTokenOptions)
+      .json(new ApiResponse(200, newUser, "User logged in successfully"));
   } else {
-    const { refreshToken, accessToken } = generateAccessAndRefereshTokens(
+    const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
       user._id
     );
+
     return res
       .status(200)
-      .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", refreshToken, options)
-      .json(new ApiResponse(200, loggedInUser, "User logged In Successfully"));
+      .cookie("accessToken", accessToken, accessTokenOptions)
+      .cookie("refreshToken", refreshToken, refreshTokenOptions)
+      .json(new ApiResponse(200, user, "User logged in successfully"));
   }
 });
-
 
 // Forgot password
 const forgotPassword = asyncHandler(async (req, res) => {
