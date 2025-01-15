@@ -34,10 +34,8 @@ const authorizeEmployer = asyncHandler(async (req, res) => {
 //1. Google Drive Authorization Callback
 const drive_verify = asyncHandler(async (req, res) => {
   const { code } = req.query;
-  console.log(code);
 
   const { tokens } = await oauth2Client.getToken(code); // Exchange code for tokens
-  console.log(tokens);
   await User.findByIdAndUpdate(
     req.user._id,
     { $set: { tokens } },
@@ -404,15 +402,12 @@ const getJobsCreatedByUser = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
   const sortOrder = order === "asc" ? 1 : -1;
 
-  console.log("Query:", query);
-
   // Fetch jobs
   const jobs = await Job.find(query)
     .sort({ [sortBy]: sortOrder })
     .skip(skip)
     .limit(Number(limit));
 
-  console.log("Jobs:", jobs);
 
   if (!jobs.length) {
     return res
@@ -430,10 +425,10 @@ const getJobsCreatedByUser = asyncHandler(async (req, res) => {
 //Update the status
 const jobStatusUpdate = asyncHandler(async (req, res) => {
   const { job_id } = req.params; // Extract job ID from URL params
-  console.log(job_id);
+
   // Find the job by ID
   const job = await Job.findById({ job_id });
-  console.log(job);
+
   if (!job) {
     throw new ApiError(400, "Job not found");
   }

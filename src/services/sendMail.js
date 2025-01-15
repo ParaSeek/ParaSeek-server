@@ -25,7 +25,6 @@ const sendMail = async (options) => {
         const templatePath = path.join(__dirname, '../mails', template);
         
         // Log the template path for debugging
-        console.log("Template path: ", templatePath);
         
         // Render the email template with EJS
         const html = await ejs.renderFile(templatePath, data);
@@ -38,7 +37,6 @@ const sendMail = async (options) => {
         };
 
         await transporter.sendMail(mailOptions);
-        console.log("Email sent successfully!");
     } catch (error) {
         console.error("Error in sendMail:", error.message);
         throw error;

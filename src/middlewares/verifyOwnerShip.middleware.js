@@ -5,7 +5,6 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 const verfiyOwnerShip = asyncHandler(async (req, res, next) => {
     // verify company exist or not
     const { companyId } = req.params;
-    console.log(req.params);
 
     const company = await Company.findById(companyId);
 

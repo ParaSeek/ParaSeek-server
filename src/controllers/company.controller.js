@@ -72,7 +72,6 @@ const hireEmployer = asyncHandler(async (req, res) => {
     throw new ApiError(400, "You cannot hire yourself");
   }
 
-  console.log(user);
 
   if (user.role !== "employer") {
     throw new ApiError(404, "User is not employer");

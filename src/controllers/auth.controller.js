@@ -5,7 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import sendMail from "../services/sendMail.js";
-
+import admin from "../services/firebaseAdmin.js";
 //WIP : Manage the refresh token to generate new access or refresh token also
 
 
@@ -120,7 +120,6 @@ export const activateUser = asyncHandler(async (req, res) => {
     req.cookies?.activation_token ||
     req.header("Authorization")?.replace("Bearer ", "");
 
-  console.log(activation_code, token);
   // Ensure token is provided
   if (!token) {
     throw new ApiError(400, "Please provide the activation token");
@@ -242,34 +241,38 @@ const logout = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged Out"));
 });
 
-// Social Auth for user
 const socialAuth = asyncHandler(async (req, res) => {
-  const { email, name, profilePic } = req.body;
-  console.log(email, name, profilePic);
+  const { idToken } = req.body;
+  const decodedToken = await admin.auth().verifyIdToken(idToken);
+  const { email, name, photoURL } = decodedToken;
 
   const user = await User.findOne({ email });
-  console.log(user);
-
-  const index = name.indexOf(' ');
+  const index = name.indexOf(" ");
   const firstName = name.substring(0, index);
   const lastName = name.substring(index + 1);
-  const username = email.substring(0, email.indexOf('@'));
+  const username = email.substring(0, email.indexOf("@"));
   const accessTokenOptions = {
     httpOnly: true,
-    secure: true, // Set to `true` in production for HTTPS
+    secure: true, // Set to true in production for HTTPS
     maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days in milliseconds
-    sameSite: "none"
+    sameSite: "none",
   };
   const refreshTokenOptions = {
     httpOnly: true,
-    secure: true, // Set to `true` in production for HTTPS
+    secure: true, // Set to true in production for HTTPS
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-    sameSite: "none"
+    sameSite: "none",
   };
 
-
   if (!user) {
-    const newUser = await User.create({ email, isVerified: true, username, firstName, lastName, profilePic });
+    const newUser = await User.create({
+      email,
+      isVerified: true,
+      username,
+      firstName,
+      lastName,
+      profilePic: photoURL,
+    });
     const { refreshToken, accessToken } = generateAccessAndRefereshTokens(
       newUser._id
     );
