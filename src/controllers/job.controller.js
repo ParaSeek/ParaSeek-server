@@ -6,7 +6,7 @@ import { google } from "googleapis";
 import { User } from "../models/user.model.js";
 import Company from "../models/company.model.js";
 import Notification from "../models/notification.model.js";
-
+import { io } from "../socketServer.js";
 // OAuth2 Client Initialization
 const oauth2Client = new google.auth.OAuth2(
   process.env.CLIENT_ID,
