@@ -5,7 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { google } from "googleapis";
 import { User } from "../models/user.model.js";
 import Company from "../models/company.model.js";
-
+import Notification from "../models/notification.model.js";
 
 // OAuth2 Client Initialization
 const oauth2Client = new google.auth.OAuth2(
@@ -161,6 +161,29 @@ const jobCreated = asyncHandler(async (req, res) => {
   const createdJob = await job.save();
   company.jobs.push(createdJob._id);
   await company.save();
+
+  const followers = company.followers;
+
+  // Step 3: Create notifications for followers
+  const notifications = followers.map((follower) => ({
+    userId: follower,
+    companyId: company._id,
+    jobId: createdJob._id,
+    message: `New job posted by ${company.name}: ${title}`,
+    isRead: false,
+  }));
+
+  // Save notifications in the database
+  await Notification.insertMany(notifications);
+
+  // Step 4: Send real-time notifications using Socket.io
+  followers.forEach((follower) => {
+    io.to(follower.toString()).emit("newJobNotification", {
+      companyId: company._id,
+      jobId: createdJob._id,
+      message: `New job posted by ${company.name}: ${title}`,
+    });
+  });
 
   return res
     .status(201)
@@ -408,7 +431,6 @@ const getJobsCreatedByUser = asyncHandler(async (req, res) => {
     .skip(skip)
     .limit(Number(limit));
 
-
   if (!jobs.length) {
     return res
       .status(404)
@@ -492,8 +514,7 @@ const recommededJobs = asyncHandler(async (req, res) => {
       userSkills.includes(skill)
     ).length;
     const jobTypeMatch = userJobTypes.includes(job.jobType) ? 1 : 0;
-    const remotePreferenceMatch =
-      userRemotePreference === job.remote ? 1 : 0;
+    const remotePreferenceMatch = userRemotePreference === job.remote ? 1 : 0;
 
     // Calculate a weighted score based on matching criteria
     const score =
@@ -506,13 +527,15 @@ const recommededJobs = asyncHandler(async (req, res) => {
 
   recommendedJobs.sort((a, b) => b.score - a.score);
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      recommendedJobs,
-      "Recommended jobs fetched successfully"
-    )
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        recommendedJobs,
+        "Recommended jobs fetched successfully"
+      )
+    );
 });
 
 export {
@@ -525,5 +548,5 @@ export {
   authorizeEmployer,
   drive_verify,
   addQuestions,
-  recommededJobs
+  recommededJobs,
 };
