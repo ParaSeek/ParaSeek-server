@@ -242,7 +242,7 @@ const logout = asyncHandler(async (req, res) => {
 });
 
 const socialAuth = asyncHandler(async (req, res) => {
-  const { idToken } = req.body;
+  const { idToken, role } = req.body;
   const decodedToken = await admin.auth().verifyIdToken(idToken);
   const { email, name, photoURL } = decodedToken;
 
@@ -270,8 +270,10 @@ const socialAuth = asyncHandler(async (req, res) => {
       isVerified: true,
       username,
       firstName,
+      role: role || "job_seeker",
       lastName,
       profilePic: photoURL,
+      loggedInThroughGoogle: true,
     });
     const { refreshToken, accessToken } = generateAccessAndRefereshTokens(
       newUser._id
