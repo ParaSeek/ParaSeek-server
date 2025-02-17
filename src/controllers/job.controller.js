@@ -164,24 +164,19 @@ const jobCreated = asyncHandler(async (req, res) => {
 
   const followers = company.followers;
 
-  // Step 3: Create notifications for followers
-  const notifications = followers.map((follower) => ({
-    userId: follower,
-    companyId: company._id,
-    jobId: createdJob._id,
-    message: `New job posted by ${company.name}: ${title}`,
-    isRead: false,
-  }));
-
-  // Save notifications in the database
-  await Notification.insertMany(notifications);
-
-  // Step 4: Send real-time notifications using Socket.io
-  followers.forEach((follower) => {
-    io.to(follower.toString()).emit("newJobNotification", {
-      companyId: company._id,
+   // Step 4: Send real-time notifications using Socket.io
+  followers.forEach(async (follower) => {
+    // Step 3: Create notifications for followers
+    await Notification.create({
+      recipientId: follower._id,
+      senderId: company._id,
+      type: "new_job",
       jobId: createdJob._id,
-      message: `New job posted by ${company.name}: ${title}`,
+      companyId: company._id,
+      message: `${
+        ("New job posted by this ", company.companyName, " apply right now")
+      }`,
+      isRead: false,
     });
   });
 

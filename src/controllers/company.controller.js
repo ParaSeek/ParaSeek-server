@@ -6,6 +6,7 @@ import { uploadOnCloudinary } from "../services/cloudinary.js";
 import Company from "../models/company.model.js";
 import { User } from "../models/user.model.js";
 import sendMail from "../services/sendMail.js";
+import Notification from "../models/notification.model.js";
 
 // Controller to create a new company
 const createCompany = asyncHandler(async (req, res) => {
@@ -72,7 +73,6 @@ const hireEmployer = asyncHandler(async (req, res) => {
     throw new ApiError(400, "You cannot hire yourself");
   }
 
-
   if (user.role !== "employer") {
     throw new ApiError(404, "User is not employer");
   }
@@ -95,7 +95,9 @@ const hireEmployer = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, {}, "successfully sent the offer letter via Email"));
+    .json(
+      new ApiResponse(200, {}, "successfully sent the offer letter via Email")
+    );
 });
 
 const employerResponse = asyncHandler(async (req, res) => {
@@ -200,6 +202,15 @@ const follow = asyncHandler(async (req, res) => {
   if (!isFollower) {
     // Add the user to the followers array
     company.followers.push(req.user._id);
+
+    await Notification.create({
+      recipientId: company._id,
+      senderId: req.user._id,
+      type: "follow",
+      companyId,
+      message: `${req.user.firstName ," ", req.user.lastName , " follow your page"}`,
+      isRead: false,
+    });
   } else {
     // Remove the user from the followers array
     company.followers = company.followers.filter(
@@ -211,13 +222,17 @@ const follow = asyncHandler(async (req, res) => {
   await company.save();
 
   // Respond with success message
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      company,
-      isFollower ? "Unfollowed the company successfully" : "Followed the company successfully"
-    )
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        company,
+        isFollower
+          ? "Unfollowed the company successfully"
+          : "Followed the company successfully"
+      )
+    );
 });
 // Controller to get a company's details by its ID
 const getCompany = asyncHandler(async (req, res) => {
@@ -241,13 +256,15 @@ const getMyCompany = asyncHandler(async (req, res) => {
   // Find the company by company owner or employers
   const company = await Company.find({
     $or: [
-        { companyOwner: req.user._id },
-        { employers: { $elemMatch: { user: req.user._id, hireProcess: "hired" } } }
-    ]
-})
-.populate("jobs")
-.populate("employers.user")
-.populate("companyOwner");
+      { companyOwner: req.user._id },
+      {
+        employers: { $elemMatch: { user: req.user._id, hireProcess: "hired" } },
+      },
+    ],
+  })
+    .populate("jobs")
+    .populate("employers.user")
+    .populate("companyOwner");
 
   if (company) {
     return res.status(200).json(new ApiResponse(200, company, "success"));

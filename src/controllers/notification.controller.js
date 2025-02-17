@@ -5,18 +5,14 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import cron from "node-cron";
 
 const getAllNotification = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-  const notifications = await Notification.find({ userId }).sort({
-    createdAt: -1,
+  const { id } = req.body;
+  const notification = await Notification.find({
+    recipientId: id,
+    isRead: false,
   });
-  if (!notifications) {
-    throw ApiError(403, "Failed to fetch all notification");
-  }
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, notifications, "Get all notification successfully")
-    );
+    .json(new ApiResponse(200, notification, "get all notification"));
 });
 
 const updateNotificationStatus = asyncHandler(async (req, res) => {
@@ -76,4 +72,8 @@ cron.schedule("0 0 0 * * *", async () => {
   console.log("Deleted read notification");
 });
 
-export { updateAllNotificationsStatus, updateNotificationStatus,getAllNotification };
+export {
+  updateAllNotificationsStatus,
+  updateNotificationStatus,
+  getAllNotification,
+};
