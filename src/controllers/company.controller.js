@@ -6,7 +6,6 @@ import { uploadOnCloudinary } from "../services/cloudinary.js";
 import Company from "../models/company.model.js";
 import { User } from "../models/user.model.js";
 import sendMail from "../services/sendMail.js";
-import Notification from "../models/notification.model.js";
 
 // Controller to create a new company
 const createCompany = asyncHandler(async (req, res) => {
@@ -202,15 +201,6 @@ const follow = asyncHandler(async (req, res) => {
   if (!isFollower) {
     // Add the user to the followers array
     company.followers.push(req.user._id);
-
-    await Notification.create({
-      recipientId: company._id,
-      senderId: req.user._id,
-      type: "follow",
-      companyId,
-      message: `${req.user.firstName ," ", req.user.lastName , " follow your page"}`,
-      isRead: false,
-    });
   } else {
     // Remove the user from the followers array
     company.followers = company.followers.filter(

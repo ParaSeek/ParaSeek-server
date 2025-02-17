@@ -7,7 +7,6 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Job } from "../models/job.model.js";
 import { Application } from "../models/application.model.js";
 import { User } from "../models/user.model.js";
-import Notification from "../models/notification.model.js";
 
 const applyForJob = asyncHandler(async (req, res) => {
   const { job_id } = req.params;
@@ -101,15 +100,6 @@ const applyForJob = asyncHandler(async (req, res) => {
       data,
     });
 
-    await Notification.create({
-      recipientId:job.postedBy,
-      senderId:user._id,
-      type:"job_application",
-      jobId:job._id,
-      companyId,
-      message:`${user.firstName , " ",user.lastName , "applied for this job"}`,
-      isRead:false,
-    });
 
     res
       .status(201)

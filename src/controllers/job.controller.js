@@ -5,8 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { google } from "googleapis";
 import { User } from "../models/user.model.js";
 import Company from "../models/company.model.js";
-import Notification from "../models/notification.model.js";
-import { io } from "../socketServer.js";
+
 // OAuth2 Client Initialization
 const oauth2Client = new google.auth.OAuth2(
   process.env.CLIENT_ID,
@@ -161,24 +160,6 @@ const jobCreated = asyncHandler(async (req, res) => {
   const createdJob = await job.save();
   company.jobs.push(createdJob._id);
   await company.save();
-
-  const followers = company.followers;
-
-   // Step 4: Send real-time notifications using Socket.io
-  followers.forEach(async (follower) => {
-    // Step 3: Create notifications for followers
-    await Notification.create({
-      recipientId: follower._id,
-      senderId: company._id,
-      type: "new_job",
-      jobId: createdJob._id,
-      companyId: company._id,
-      message: `${
-        ("New job posted by this ", company.companyName, " apply right now")
-      }`,
-      isRead: false,
-    });
-  });
 
   return res
     .status(201)
