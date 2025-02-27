@@ -2,14 +2,11 @@ import { app } from "./app.js";
 import dotenv from "dotenv";
 import http from "http";
 import { connectDB } from "./db/connectDB.js";
-import { initSocketServer } from "./socketServer.js";
 dotenv.config({
   path: "./.env",
 });
 
 const server = http.createServer(app);
-
-initSocketServer(server);
 
 connectDB()
   .then(() => {
