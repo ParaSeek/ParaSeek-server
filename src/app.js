@@ -13,6 +13,9 @@ import { applicationRouter } from "./routes/application.route.js";
 import { adminRouter } from "./routes/admin.route.js";
 import companyRouter from "./routes/company.route.js";
 import resumeDraftRouter from "./routes/resumeDraft.route.js";
+import communityRouter from "./routes/community.route.js";
+import messageRouter from "./routes/message.route.js";
+
 dotenv.config();
 const app = express();
 
@@ -33,7 +36,7 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
 app.use(cookieParser());
 
-// auth route
+//routes
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/qualification", qualificationRouter);
@@ -43,6 +46,8 @@ app.use("/api/v1/application", applicationRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/company", companyRouter);
 app.use("/api/v1/draft", resumeDraftRouter);
+app.use("/api/v1/community", communityRouter);
+app.use("/api/v1/dm", messageRouter)
 
 // unknown route
 app.all("*", (req, res, next) => {
