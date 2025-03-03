@@ -39,6 +39,12 @@ export const initSocketServer = (server) => {
       socket.to(chatId).emit("hangup");
     })
 
+    socket.on("toggle-mic", ({ status, chatId }) => {
+      socket.to(chatId).emit("toggle-mic", status);
+    })
+    socket.on("toggle-video", ({ status, chatId }) => {
+      socket.to(chatId).emit("toggle-video", status);
+    })
 
     socket.on("disconnect", () => {
       console.log("A user disconnected");
