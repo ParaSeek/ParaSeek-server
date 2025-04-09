@@ -12,7 +12,7 @@ const sendMail = async (options) => {
         const transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
             port: parseInt(process.env.SMTP_PORT || '587'),
-            service: process.env.SMTP_SERVICE,
+            secure: process.env.EMAIL_PORT === "465",
             auth: {
                 user: process.env.SMTP_MAIL,
                 pass: process.env.SMTP_PASSWORD
@@ -23,9 +23,9 @@ const sendMail = async (options) => {
 
         // Get the path to the email template file
         const templatePath = path.join(__dirname, '../mails', template);
-        
+
         // Log the template path for debugging
-        
+
         // Render the email template with EJS
         const html = await ejs.renderFile(templatePath, data);
 
